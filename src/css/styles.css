@@ -1,0 +1,52 @@
+/* Variáveis Globais */
+:root {
+  --primary-color: #007bff;
+  --secondary-color: #1e1e1e;
+  --text-color: #ffffff;
+  --background-color: #121212;
+  --border-radius: 8px;
+  --shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Tema Claro */
+body.body--light {
+  --secondary-color: #f5f5f5;
+  --text-color: #000000;
+  --background-color: #f5f5f5;
+}
+
+/* Tema Escuro */
+body.body--dark {
+  --secondary-color: #1e1e1e;
+  --text-color: #ffffff;
+  --background-color: #121212;
+}
+
+/* Estilos para o page */
+.q-page {
+  background-color: var(--background-color);
+}
+
+/* Estilos para Inputs do Quasar */
+.q-input {
+  background: var(--secondary-color);
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+}
+
+.q-input input {
+  color: var(--text-color) !important;
+}
+
+.q-input input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.q-input .q-field__label {
+  color: var(--text-color) !important;
+}
+
+.q-input .q-icon {
+  color: var(--text-color) !important;
+}
