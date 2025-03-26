@@ -53,7 +53,7 @@
                 v-model="user.password"
                 type="password"
                 class="q-my-sm"
-                :rules="[required('Senha')]"
+                :rules="[required('Senha'), minLength('Senha', 8)]"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-lock" />
@@ -69,6 +69,7 @@
                 :rules="[
                   required('Confirmação de senha'),
                   passwordMatch(user.password, confirmPassowrd),
+                  minLength('Senha', 8),
                 ]"
               >
                 <template v-slot:prepend>
@@ -78,8 +79,10 @@
               <q-checkbox
                 v-model="check"
                 label="Eu concordo com os Termos de Serviço e Política de Privacidade"
-                :rules="[required('Este campo')]"
               ></q-checkbox>
+              <div v-if="!check && checkValidate" class="q-ml-md text-negative">
+                Você deve aceitar os termos!
+              </div>
               <q-btn
                 class="full-width q-my-md"
                 icon="mdi-account-plus"
@@ -131,20 +134,27 @@ export default {
       password: '',
     });
     const check = ref<boolean>(false);
+    const checkValidate = ref<boolean>(false);
     const confirmPassowrd = ref<string>('');
 
     async function createAccount(): Promise<void> {
       try {
         // Validação programática
-        const isValid = await form.value.validate();
+        const isValid: boolean = await form.value.validate();
 
-        if (isValid) {
+        if (isValid && check.value) {
+          checkValidate.value = false;
           $q.notify({
             type: 'positive',
             message: 'Formulário válido!',
           });
           // Lógica de submissão aqui
         } else {
+          if (!check.value) {
+            checkValidate.value = true;
+          } else {
+            checkValidate.value = false;
+          }
           $q.notify({
             type: 'negative',
             message: 'Corrija os erros no formulário',
@@ -170,6 +180,7 @@ export default {
       confirmPassowrd,
       createAccount,
       form,
+      checkValidate,
     };
   },
 };
