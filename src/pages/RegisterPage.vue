@@ -79,7 +79,6 @@
               <q-checkbox
                 v-model="check"
                 label="Eu concordo com os Termos de Serviço e Política de Privacidade"
-                :rules="[required('Este campo')]"
               ></q-checkbox>
               <div v-if="!check && checkVerify" class="text-negative q-ml-md">
                 É necessário aceitar os termos!
@@ -143,7 +142,7 @@ export default {
     async function createAccount(): Promise<void> {
       try {
         // Validação programática
-        const isValid = await form.value.validate();
+        const isValid: boolean = await form.value.validate();
 
         if (isValid && check.value) {
           checkVerify.value = false;
