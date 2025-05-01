@@ -13,26 +13,13 @@
             </span>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
-            <span class="text-h4 text-center text-bold">Criar nova conta</span>
+            <span class="text-h4 text-center text-bold">Bem-vindo de volta</span>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
-            <span class="text-subtitle1 text-center">Preencha os campos abaixo para começar</span>
+            <span class="text-subtitle1 text-center">Faça login para acessar sua conta</span>
           </q-card-section>
           <q-card-section>
-            <q-form @submit="createAccount" ref="form">
-              <q-input
-                filled
-                label="Digite seu nome completo"
-                label-color="white"
-                type="text"
-                v-model="user.name"
-                class="q-my-sm"
-                :rules="[required('Nome completo')]"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="mdi-account" />
-                </template>
-              </q-input>
+            <q-form @submit="acessAccount" ref="form">
               <q-input
                 filled
                 label="Email"
@@ -59,30 +46,8 @@
                   <q-icon name="mdi-lock" />
                 </template>
               </q-input>
-              <q-input
-                filled
-                label="Confirmar senha"
-                label-color="white"
-                v-model="confirmPassowrd"
-                type="password"
-                class="q-my-sm"
-                :rules="[
-                  required('Confirmação de senha'),
-                  passwordMatch(user.password, confirmPassowrd),
-                  minLength('Senha', 8),
-                ]"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="mdi-lock" />
-                </template>
-              </q-input>
-              <q-checkbox
-                v-model="check"
-                label="Eu concordo com os Termos de Serviço e Política de Privacidade"
-                :rules="[required('Este campo')]"
-              ></q-checkbox>
-              <div v-if="!check && checkVerify" class="text-negative q-ml-md">
-                É necessário aceitar os termos!
+              <div class="text-right">
+                <span>Esqueceu a senha?</span>
               </div>
               <q-btn
                 class="full-width q-my-md"
@@ -94,7 +59,7 @@
             </q-form>
           </q-card-section>
           <q-card-section class="text-center">
-            <span>Já tem um conta? Faça login aqui</span>
+            <span>Não tem uma conta? Cadastre-se aqui</span>
           </q-card-section>
         </q-card>
       </div>
@@ -122,7 +87,7 @@
 import type { QForm } from 'quasar';
 import { useQuasar } from 'quasar';
 import { required, email, minLength, passwordMatch, checkboxRequired } from '../utils/validation';
-import type { UserRegisterI } from 'src/models/user.model';
+import type { UserLoginI } from 'src/models/user.model';
 import { ref } from 'vue';
 import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
@@ -131,33 +96,18 @@ export default {
   setup() {
     const $q = useQuasar();
     const form = ref<QForm>(null);
-    const user = ref<UserRegisterI>({
-      name: '',
+    const user = ref<UserLoginI>({
       email: '',
       password: '',
     });
-    const check = ref<boolean>(false);
-    const checkVerify = ref<boolean>(false);
-    const confirmPassowrd = ref<string>('');
 
-    async function createAccount(): Promise<void> {
+    async function acessAccount(): Promise<void> {
       try {
         // Validação programática
         const isValid = await form.value.validate();
 
-        if (isValid && check.value) {
-          checkVerify.value = false;
-          const response: ResponseI = await UserService.register(user.value);
-
-          if (!response.sucess) {
-            throw Error(response.message);
-          }
-
-          localStorage.setItem('code', response.data);
-
-          console.log(response);
+        if (isValid) {
         } else {
-          checkVerify.value = true;
           $q.notify({
             type: 'negative',
             message: 'Corrija os erros no formulário',
@@ -174,16 +124,13 @@ export default {
 
     return {
       user,
-      check,
       required,
       email,
       minLength,
       passwordMatch,
       checkboxRequired,
-      confirmPassowrd,
-      createAccount,
+      acessAccount,
       form,
-      checkVerify,
     };
   },
 };
