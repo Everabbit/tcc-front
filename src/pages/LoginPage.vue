@@ -5,8 +5,8 @@
       class="row flex items-stretch justify-center q-ma-md"
       style="min-width: 60vw"
     >
-      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg">
-        <q-card flat>
+      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
+        <q-card flat class="full-width">
           <q-card-section>
             <span class="text-primary flex justify-center items-center text-h5">
               <q-icon size="lg" name="mdi-fireplace" class="q-mr-md" /> <b>TaskForge</b>
@@ -59,7 +59,10 @@
             </q-form>
           </q-card-section>
           <q-card-section class="text-center">
-            <span>Não tem uma conta? Cadastre-se aqui</span>
+            <span
+              >Não tem uma conta?
+              <a href="/registro" style="text-decoration: none">Cadastre-se aqui</a></span
+            >
           </q-card-section>
         </q-card>
       </div>

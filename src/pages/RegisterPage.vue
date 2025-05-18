@@ -25,7 +25,7 @@
                 label="Digite seu nome completo"
                 label-color="white"
                 type="text"
-                v-model="user.name"
+                v-model="user.fullName"
                 class="q-my-sm"
                 :rules="[required('Nome completo')]"
               >
@@ -93,7 +93,9 @@
             </q-form>
           </q-card-section>
           <q-card-section class="text-center">
-            <span>Já tem um conta? Faça login aqui</span>
+            <span
+              >Já tem um conta? <a href="/" style="text-decoration: none">Faça login aqui</a></span
+            >
           </q-card-section>
         </q-card>
       </div>
@@ -125,13 +127,15 @@ import type { UserRegisterI } from 'src/models/user.model';
 import { ref } from 'vue';
 import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
+import { setHttpToken } from 'src/services/api';
+import { clone } from 'src/utils/transform';
 
 export default {
   setup() {
     const $q = useQuasar();
     const form = ref<QForm>(null);
     const user = ref<UserRegisterI>({
-      name: '',
+      fullName: '',
       email: '',
       password: '',
     });
@@ -146,13 +150,15 @@ export default {
 
         if (isValid && check.value) {
           checkVerify.value = false;
-          const response: ResponseI = await UserService.register(user.value);
+          const response: ResponseI = await UserService.register(clone(user.value));
 
           if (!response.sucess) {
             throw Error(response.message);
           }
 
-          localStorage.setItem('code', response.data);
+          const token: string = response.data;
+
+          setHttpToken(token);
 
           console.log(response);
         } else {
