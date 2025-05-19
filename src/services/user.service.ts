@@ -1,6 +1,6 @@
 import type { ResponseI } from 'src/models/response.model';
 import api from './api';
-import { UserRegisterI } from 'src/models/user.model';
+import { UserLoginI, UserRegisterI } from 'src/models/user.model';
 import { AxiosResponse } from 'axios';
 import { toBase64 } from 'src/utils/transform';
 
@@ -30,9 +30,52 @@ export default class UserService {
     }
   }
 
+  static async login(user: UserLoginI): Promise<ResponseI> {
+    try {
+      if (!user || !user.email || !user.password) {
+        throw Error('Informe um usuário válido!');
+      }
+
+      user.email = toBase64(user.email);
+      user.password = toBase64(user.password);
+
+      const response: AxiosResponse = await api.post(`/users/login`, user);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        sucess: false,
+      };
+      return response;
+    }
+  }
+
   static async validateToken(): Promise<ResponseI> {
     try {
-      const response: AxiosResponse = await api.post(`/users/validateToken`);
+      const response: AxiosResponse = await api.get(`/users/validateToken`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        sucess: false,
+      };
+      return response;
+    }
+  }
+
+  static async getBasicUser(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.get(`/users/basicinfo`);
 
       if (response.status === 200) {
         return response.data;

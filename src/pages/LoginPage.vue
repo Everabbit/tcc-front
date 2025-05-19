@@ -52,7 +52,7 @@
               <q-btn
                 class="full-width q-my-md"
                 icon="mdi-account-plus"
-                label="Criar Conta"
+                label="Entrar"
                 color="primary"
                 type="submit"
               />
@@ -94,10 +94,14 @@ import type { UserLoginI } from 'src/models/user.model';
 import { ref } from 'vue';
 import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
+import { clone } from 'src/utils/transform';
+import { setHttpToken } from 'src/services/api';
+import { useRouter } from 'vue-router';
 
 export default {
   setup() {
     const $q = useQuasar();
+    const router = useRouter();
     const form = ref<QForm>(null);
     const user = ref<UserLoginI>({
       email: '',
@@ -110,6 +114,17 @@ export default {
         const isValid = await form.value.validate();
 
         if (isValid) {
+          const response: ResponseI = await UserService.login(clone(user.value));
+
+          if (!response.sucess) {
+            throw Error(response.message);
+          }
+
+          const token: string = response.data;
+
+          setHttpToken(token);
+
+          router.push('/p/dashboard');
         } else {
           $q.notify({
             type: 'negative',
