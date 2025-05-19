@@ -29,4 +29,22 @@ export default class UserService {
       return response;
     }
   }
+
+  static async validateToken(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.post(`/users/validateToken`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        sucess: false,
+      };
+      return response;
+    }
+  }
 }

@@ -129,10 +129,12 @@ import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
 import { setHttpToken } from 'src/services/api';
 import { clone } from 'src/utils/transform';
+import { useRouter } from 'vue-router';
 
 export default {
   setup() {
     const $q = useQuasar();
+    const router = useRouter();
     const form = ref<QForm>(null);
     const user = ref<UserRegisterI>({
       fullName: '',
@@ -160,7 +162,7 @@ export default {
 
           setHttpToken(token);
 
-          console.log(response);
+          router.push('/p/dashboard');
         } else {
           checkVerify.value = true;
           $q.notify({
