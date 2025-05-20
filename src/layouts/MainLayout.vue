@@ -13,7 +13,7 @@
           icon="mdi-menu"
         />
 
-        <q-toolbar-title class="q-py-sm text-white"> TaskForge </q-toolbar-title>
+        <q-toolbar-title class="q-py-sm text-white"> {{ $route.name }} </q-toolbar-title>
       </q-toolbar>
     </q-header>
 
@@ -41,67 +41,36 @@
 
           <!-- Itens do Menu -->
           <q-list padding class="sidebar-nav">
-            <q-item
-              clickable
-              v-ripple
-              exact
-              class="q-mb-xs"
-              :class="{ 'active-menu-item': $route.path === '/' }"
-            >
-              <q-item-section avatar>
-                <q-icon name="mdi-view-dashboard" />
-              </q-item-section>
-              <q-item-section>Dashboard</q-item-section>
-            </q-item>
-
-            <q-item
-              clickable
-              v-ripple
-              exact
-              class="q-mb-xs"
-              :class="{ 'active-menu-item': $route.path === '/projects' }"
-            >
-              <q-item-section avatar>
-                <q-icon name="mdi-folder-multiple" />
-              </q-item-section>
-              <q-item-section>Projetos</q-item-section>
-            </q-item>
-
-            <q-item
-              clickable
-              v-ripple
-              exact
-              class="q-mb-xs"
-              :class="{ 'active-menu-item': $route.path === '/tasks' }"
-            >
-              <q-item-section avatar>
-                <q-icon name="mdi-format-list-checks" />
-              </q-item-section>
-              <q-item-section>Minhas Tarefas</q-item-section>
-            </q-item>
-
-            <q-item
-              clickable
-              v-ripple
-              exact
-              class="q-mb-xs"
-              :class="{ 'active-menu-item': $route.path === '/settings' }"
-            >
-              <q-item-section avatar>
-                <q-icon name="mdi-cog" />
-              </q-item-section>
-              <q-item-section>Configurações</q-item-section>
-            </q-item>
+            <div v-for="item in menuList" :key="item.id">
+              <q-item
+                clickable
+                v-ripple
+                exact
+                class="q-mb-xs"
+                :class="{ 'active-menu-item': $route.path === item.link }"
+                :to="item.link"
+              >
+                <q-item-section avatar>
+                  <q-icon :name="item.icon" />
+                </q-item-section>
+                <q-item-section>{{ item.title }}</q-item-section>
+              </q-item>
+            </div>
           </q-list>
         </div>
 
         <!-- Rodapé com Perfil do Usuário -->
         <div class="sidebar-footer absolute-bottom q-pa-md">
           <div class="user-profile row items-center">
-            <q-avatar size="40px" color="primary" text-color="white" class="q-mr-sm">JD</q-avatar>
+            <q-avatar size="40px" color="primary" text-color="white" class="q-mr-sm">
+              <img v-if="userBasic.image" :src="userBasic.image" />
+              <span v-else>{{ userBasic.initials }}</span>
+            </q-avatar>
             <div>
-              <div class="text-weight-medium">John Doe</div>
-              <small class="text-grey-5">Admin</small>
+              <div class="text-weight-medium">{{ userBasic.fullName }}</div>
+              <small class="text-grey-5">{{
+                userBasic.username ? userBasic.username : userBasic.email
+              }}</small>
             </div>
           </div>
         </div>
@@ -115,8 +84,11 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar';
+import { menuBasicList, MenuBasicListI } from 'src/models/menu_list.model';
 import { ResponseI } from 'src/models/response.model';
+import { UserBasicI } from 'src/models/user.model';
 import UserService from 'src/services/user.service';
+import { clone } from 'src/utils/transform';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -126,6 +98,12 @@ export default {
     const router = useRouter();
     const leftDrawerOpen = ref(false);
 
+    const userBasic = ref<UserBasicI>({
+      id: 0,
+    });
+
+    const menuList = ref<MenuBasicListI[]>(clone(menuBasicList));
+
     async function validateToken(): Promise<void> {
       try {
         const response: ResponseI = await UserService.validateToken();
@@ -133,7 +111,6 @@ export default {
         if (!response.sucess) {
           throw Error(response.message);
         }
-        console.log(response.message);
       } catch (error) {
         console.error('Erro:', error);
         router.push('/');
@@ -150,7 +127,16 @@ export default {
         if (!response.sucess) {
           throw Error(response.message);
         }
-        console.log(response);
+        userBasic.value = response.data;
+
+        const nameParts = userBasic.value.fullName.split(' ');
+        if (nameParts.length > 1) {
+          userBasic.value.initials = (
+            nameParts[0].charAt(0) + nameParts[1].charAt(0)
+          ).toUpperCase();
+        } else {
+          userBasic.value.initials = nameParts[0].substring(0, 2).toUpperCase();
+        }
       } catch (error) {
         console.error('Erro:', error);
         $q.notify({
@@ -164,7 +150,14 @@ export default {
       await validateToken();
       await getBasicInfo();
     });
-    return { leftDrawerOpen };
+    return { leftDrawerOpen, userBasic, menuList };
   },
 };
 </script>
+
+<style lang="css">
+.active-menu-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+</style>
