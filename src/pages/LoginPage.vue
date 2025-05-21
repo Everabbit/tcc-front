@@ -5,7 +5,7 @@
       class="row flex items-stretch justify-center q-ma-md"
       style="min-width: 60vw"
     >
-      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
+      <div v-if="!logged" class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
         <q-card flat class="full-width">
           <q-card-section>
             <span class="text-primary flex justify-center items-center text-h5">
@@ -66,6 +66,52 @@
           </q-card-section>
         </q-card>
       </div>
+      <!-- se estiver logado imagem, nome de usuário e botão de entrar -->
+      <div v-else class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
+        <q-card flat class="full-width">
+          <q-card-section>
+            <span class="text-primary flex justify-center items-center text-h5">
+              <q-icon size="lg" name="mdi-fireplace" class="q-mr-md" /> <b>TaskForge</b>
+            </span>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-none">
+            <span class="text-h4 text-center text-bold">Bem-vindo(a)</span>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-none">
+            <span class="text-subtitle1 text-center">Você já está logado</span>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-md">
+            <q-avatar size="80px" color="primary" text-color="white" class="q-mr-sm">
+              <img v-if="userBasic.image" :src="userBasic.image" />
+              <span v-else>{{ userBasic.initials }}</span>
+            </q-avatar>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-none">
+            <span class="text-subtitle1 text-center">{{ userBasic.fullName }}</span>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-none">
+            <span class="text-subtitle1 text-center">{{
+              userBasic.username ? userBasic.username : userBasic.email
+            }}</span>
+          </q-card-section>
+          <q-card-section>
+            <q-btn
+              class="full-width q-my-sm"
+              icon="mdi-login"
+              label="Entrar"
+              color="primary"
+              @click="$router.push('/p/dashboard')"
+            />
+            <q-btn
+              class="full-width"
+              icon="mdi-logout"
+              label="Sair"
+              color="primary"
+              @click="logoutAccount"
+            />
+          </q-card-section>
+        </q-card>
+      </div>
       <div class="col-6" v-if="$q.screen.md || $q.screen.lg || $q.screen.xl">
         <q-img
           src="../assets/auth_image.png"
@@ -90,8 +136,8 @@
 import type { QForm } from 'quasar';
 import { useQuasar } from 'quasar';
 import { required, email, minLength, passwordMatch, checkboxRequired } from '../utils/validation';
-import type { UserLoginI } from 'src/models/user.model';
-import { ref } from 'vue';
+import type { UserBasicI, UserLoginI } from 'src/models/user.model';
+import { onMounted, ref } from 'vue';
 import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
 import { clone } from 'src/utils/transform';
@@ -108,9 +154,13 @@ export default {
       password: '',
     });
 
+    const logged = ref<boolean>(false);
+    const userBasic = ref<UserBasicI>({
+      id: 0,
+    });
+
     async function acessAccount(): Promise<void> {
       try {
-        // Validação programática
         const isValid = await form.value.validate();
 
         if (isValid) {
@@ -140,6 +190,52 @@ export default {
       }
     }
 
+    async function logoutAccount(): Promise<void> {
+      try {
+        setHttpToken('');
+
+        logged.value = false;
+      } catch (error) {
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: 'Ocorreu um erro ao deslogar do sistema',
+        });
+      }
+    }
+
+    async function getBasicInfo(): Promise<void> {
+      try {
+        const response: ResponseI = await UserService.getBasicUser();
+
+        if (!response.sucess) {
+          throw Error(response.message);
+        }
+        logged.value = true;
+        userBasic.value = response.data;
+
+        const nameParts = userBasic.value.fullName.split(' ');
+        if (nameParts.length > 1) {
+          userBasic.value.initials = (
+            nameParts[0].charAt(0) + nameParts[1].charAt(0)
+          ).toUpperCase();
+        } else {
+          userBasic.value.initials = nameParts[0].substring(0, 2).toUpperCase();
+        }
+      } catch (error) {
+        logged.value = false;
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: 'Ocorreu um erro ao buscar informações do usuário',
+        });
+      }
+    }
+
+    onMounted(async () => {
+      await getBasicInfo();
+    });
+
     return {
       user,
       required,
@@ -149,6 +245,9 @@ export default {
       checkboxRequired,
       acessAccount,
       form,
+      logged,
+      userBasic,
+      logoutAccount,
     };
   },
 };
