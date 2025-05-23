@@ -14,6 +14,19 @@
         />
 
         <q-toolbar-title class="q-py-sm text-white"> {{ $route.name }} </q-toolbar-title>
+        <q-space />
+        <q-btn
+          v-if="button.button"
+          class="new-project-btn hover-lift"
+          dense
+          unelevated
+          padding="5px 10px"
+          color="primary"
+          @click="clickButton"
+        >
+          <q-icon name="mdi-plus" size="15px" class="q-mr-sm" />
+          <span style="font-size: 15px">Novo Projeto</span>
+        </q-btn>
       </q-toolbar>
     </q-header>
 
@@ -61,18 +74,20 @@
 
         <!-- Rodapé com Perfil do Usuário -->
         <div class="sidebar-footer absolute-bottom q-pa-md">
-          <div class="user-profile row items-center">
+          <q-item class="user-profile row items-center q-pa-none">
+            <!-- Adicione min-width: 0 -->
             <q-avatar size="40px" color="primary" text-color="white" class="q-mr-sm">
               <img v-if="userBasic.image" :src="userBasic.image" />
               <span v-else>{{ userBasic.initials }}</span>
             </q-avatar>
-            <div>
-              <div class="text-weight-medium">{{ userBasic.fullName }}</div>
-              <small class="text-grey-5">{{
-                userBasic.username ? userBasic.username : userBasic.email
-              }}</small>
+            <div class="col self-stretch column justify-center">
+              <!-- Container ajustado -->
+              <div class="text-weight-medium text-truncate">{{ userBasic.fullName }}</div>
+              <small class="text-grey-5 text-truncate">
+                {{ userBasic.username || userBasic.email }}
+              </small>
             </div>
-          </div>
+          </q-item>
         </div>
       </q-scroll-area>
     </q-drawer>
@@ -84,12 +99,14 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar';
+import { HeaderButtonI } from 'src/models/extra.model';
 import { menuBasicList, MenuBasicListI } from 'src/models/menu_list.model';
 import { ResponseI } from 'src/models/response.model';
 import { UserBasicI } from 'src/models/user.model';
 import UserService from 'src/services/user.service';
+import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 export default {
@@ -102,24 +119,16 @@ export default {
       id: 0,
     });
 
+    const button = computed<HeaderButtonI | null>((): HeaderButtonI | null => {
+      const button: HeaderButtonI = clone(router.currentRoute.value.meta);
+      return button;
+    });
+
     const menuList = ref<MenuBasicListI[]>(clone(menuBasicList));
-
-    async function validateToken(): Promise<void> {
-      try {
-        const response: ResponseI = await UserService.validateToken();
-
-        if (!response.sucess) {
-          throw Error(response.message);
-        }
-      } catch (error) {
-        console.error('Erro:', error);
-        router.push('/');
-        $q.notify({
-          type: 'negative',
-          message: 'Ocorreu um erro ao logar no sistema',
-        });
-      }
+    function clickButton(): void {
+      emitter.emit(button.value.emitt);
     }
+
     async function getBasicInfo(): Promise<void> {
       try {
         const response: ResponseI = await UserService.getBasicUser();
@@ -139,6 +148,7 @@ export default {
         }
       } catch (error) {
         console.error('Erro:', error);
+        router.push('/');
         $q.notify({
           type: 'negative',
           message: 'Ocorreu um erro ao buscar informações do usuário',
@@ -147,10 +157,9 @@ export default {
     }
 
     onMounted(async () => {
-      await validateToken();
       await getBasicInfo();
     });
-    return { leftDrawerOpen, userBasic, menuList };
+    return { leftDrawerOpen, userBasic, menuList, button, clickButton };
   },
 };
 </script>
@@ -159,5 +168,28 @@ export default {
 .active-menu-item {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
+}
+
+/* Estilo específico para o botão Novo Projeto */
+.new-project-btn {
+  background: var(--primary-color);
+  color: var(--text-color);
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.new-project-btn:hover {
+  background: var(--light-blue);
+  transform: translateY(-2px);
+}
+
+.new-project-btn i {
+  font-size: 1rem;
 }
 </style>

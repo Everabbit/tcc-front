@@ -14,7 +14,17 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: 'dashboard', component: () => import('pages/IndexPage.vue'), name: 'Dashboard' },
-      { path: 'projetos', component: () => import('pages/ProjectsPage.vue'), name: 'Projetos' },
+      {
+        path: 'projetos',
+        component: () => import('pages/ProjectsPage.vue'),
+        name: 'Projetos',
+        meta: {
+          button: true,
+          label: 'Novo Projeto',
+          icon: 'mdi-plus',
+          emitt: 'open-project-dialog',
+        },
+      },
     ],
   },
 

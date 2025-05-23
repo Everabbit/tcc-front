@@ -1,9 +1,17 @@
-// utils/validations.js
 export const required = (fieldName) => (val) => !!val || `${fieldName} é obrigatório!`;
 
 export const email = (val) => {
   const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return pattern.test(val) || 'Digite um e-mail válido';
+};
+
+export const validateEmail = (val) => {
+  const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return pattern.test(val);
+};
+
+export const validateSelect = (val) => {
+  return typeof val === 'number' && val >= 0;
 };
 
 export const minLength = (fieldName, length) => (val) =>
