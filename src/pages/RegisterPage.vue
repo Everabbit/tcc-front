@@ -94,7 +94,8 @@
           </q-card-section>
           <q-card-section class="text-center">
             <span
-              >Já tem um conta? <a href="/" style="text-decoration: none">Faça login aqui</a></span
+              >Já tem um conta?
+              <router-link to="/" style="text-decoration: none">Faça login aqui</router-link></span
             >
           </q-card-section>
         </q-card>
@@ -154,7 +155,7 @@ export default {
           checkVerify.value = false;
           const response: ResponseI = await UserService.register(clone(user.value));
 
-          if (!response.sucess) {
+          if (!response.success) {
             throw Error(response.message);
           }
 

@@ -133,7 +133,7 @@ export default {
       try {
         const response: ResponseI = await UserService.getBasicUser();
 
-        if (!response.sucess) {
+        if (!response.success) {
           throw Error(response.message);
         }
         userBasic.value = response.data;

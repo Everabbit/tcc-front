@@ -4,13 +4,17 @@ import { ResponseI } from 'src/models/response.model';
 import api from './api';
 
 export default class ProjectService {
-  static async create(project: ProjectCreateI): Promise<ResponseI> {
+  static async create(project: FormData): Promise<ResponseI> {
     try {
-      if (!project || !project.name) {
+      if (!project) {
         throw Error('Informe um projeto válido!');
       }
 
-      const response: AxiosResponse = await api.post(`/projects/create`, project);
+      const response: AxiosResponse = await api.post(`/projects/create`, project, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       if (response.status === 200) {
         return response.data;
@@ -20,7 +24,7 @@ export default class ProjectService {
     } catch (err: any) {
       const response: ResponseI = {
         message: err,
-        sucess: false,
+        success: false,
       };
       return response;
     }
