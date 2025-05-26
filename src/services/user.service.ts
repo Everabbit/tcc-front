@@ -25,7 +25,7 @@ export default class UserService {
     } catch (err: any) {
       const response: ResponseI = {
         message: err,
-        sucess: false,
+        success: false,
       };
       return response;
     }
@@ -50,7 +50,7 @@ export default class UserService {
     } catch (err: any) {
       const response: ResponseI = {
         message: err,
-        sucess: false,
+        success: false,
       };
       return response;
     }
@@ -68,7 +68,7 @@ export default class UserService {
     } catch (err: any) {
       const response: ResponseI = {
         message: err,
-        sucess: false,
+        success: false,
       };
       return response;
     }
@@ -86,7 +86,7 @@ export default class UserService {
     } catch (err: any) {
       const response: ResponseI = {
         message: err,
-        sucess: false,
+        success: false,
       };
       return response;
     }

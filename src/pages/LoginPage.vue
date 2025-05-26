@@ -61,7 +61,9 @@
           <q-card-section class="text-center">
             <span
               >Não tem uma conta?
-              <a href="/registro" style="text-decoration: none">Cadastre-se aqui</a></span
+              <router-link to="/registro" style="text-decoration: none"
+                >Cadastre-se aqui</router-link
+              ></span
             >
           </q-card-section>
         </q-card>
@@ -166,7 +168,7 @@ export default {
         if (isValid) {
           const response: ResponseI = await UserService.login(clone(user.value));
 
-          if (!response.sucess) {
+          if (!response.success) {
             throw Error(response.message);
           }
 
@@ -208,7 +210,7 @@ export default {
       try {
         const response: ResponseI = await UserService.getBasicUser();
 
-        if (!response.sucess) {
+        if (!response.success) {
           throw Error(response.message);
         }
         logged.value = true;
@@ -224,11 +226,6 @@ export default {
         }
       } catch (error) {
         logged.value = false;
-        console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: 'Ocorreu um erro ao buscar informações do usuário',
-        });
       }
     }
 

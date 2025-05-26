@@ -16,6 +16,7 @@
           outlined
           class="q-mb-md"
           :rules="[required('Nome do projeto')]"
+          hide-bottom-space
         />
 
         <!-- Descrição -->
@@ -61,13 +62,12 @@
         <!-- Upload de Banner -->
         <div class="q-mb-md">
           <label class="text-caption">Banner do Projeto (Opcional)</label>
-          <q-file outlined v-model="projectCreateData.bannerFile" accept="image/*" class="q-mt-sm">
+          <q-file outlined v-model="bannerFile" accept="image/*" class="q-mt-sm">
             <template v-slot:prepend>
               <q-icon name="mdi-upload" />
             </template>
           </q-file>
         </div>
-
         <!-- Membros -->
         <div class="q-mb-md">
           <label class="text-caption">Membros Iniciais</label>
@@ -139,7 +139,7 @@
 <script lang="ts">
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { ProjectCreateI, ProjectMemberI } from 'src/models/project.model';
-import { clone } from 'src/utils/transform';
+import { clone, fileToBase64, toBase64 } from 'src/utils/transform';
 import { computed, ref } from 'vue';
 import { required, validateEmail, validateSelect } from '../utils/validation';
 import { QForm, useQuasar } from 'quasar';
@@ -156,10 +156,9 @@ export default {
       name: '',
       deadline: '',
       description: '',
-      bannerFile: null,
       members: [],
     });
-
+    const bannerFile = ref<File>(null);
     const roles = clone(RolesValues);
 
     const projectCreateMemberData = ref<ProjectMemberI>({
@@ -210,17 +209,21 @@ export default {
         const isValid: boolean = await form.value.validate();
 
         if (isValid) {
-          const response: ResponseI = await ProjectService.create(clone(projectCreateData.value));
+          const formData: FormData = new FormData();
+          formData.append('project', JSON.stringify(projectCreateData.value));
+          if (bannerFile.value) {
+            formData.append('banner', bannerFile.value);
+          }
 
-          if (!response.sucess) {
+          const response: ResponseI = await ProjectService.create(formData);
+
+          if (!response.success) {
             throw Error(response.message);
           }
 
-          const token: string = response.data;
-
           $q.notify({
             type: 'positive',
-            message: 'Projeto criado com sucesso!',
+            message: 'Projeto criado com successo!',
           });
 
           //limpar formulário
@@ -228,9 +231,9 @@ export default {
             name: '',
             deadline: '',
             description: '',
-            bannerFile: null,
             members: [],
           };
+          bannerFile.value = null;
           projectCreateMemberData.value = {
             email: '',
             name: '',
@@ -264,6 +267,7 @@ export default {
       removeMember,
       addProject,
       form,
+      bannerFile,
     };
   },
 };
