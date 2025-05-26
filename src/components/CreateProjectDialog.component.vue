@@ -77,7 +77,7 @@
               outlined
               hide-bottom-space
               v-model="projectCreateMemberData.email"
-              placeholder="E-mail do membro"
+              placeholder="Nome de usuário"
               class="col"
             >
               <template v-slot:prepend>

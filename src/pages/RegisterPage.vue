@@ -48,6 +48,19 @@
               </q-input>
               <q-input
                 filled
+                label="Nome de usuário"
+                label-color="white"
+                v-model="user.username"
+                type="text"
+                class="q-my-sm"
+                :rules="[required('Nome de usuário'), username]"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-account-circle" />
+                </template>
+              </q-input>
+              <q-input
+                filled
                 label="Senha"
                 label-color="white"
                 v-model="user.password"
@@ -122,7 +135,14 @@
 <script lang="ts">
 import type { QForm } from 'quasar';
 import { useQuasar } from 'quasar';
-import { required, email, minLength, passwordMatch, checkboxRequired } from '../utils/validation';
+import {
+  required,
+  email,
+  minLength,
+  passwordMatch,
+  checkboxRequired,
+  username,
+} from '../utils/validation';
 import type { UserRegisterI } from 'src/models/user.model';
 import { ref } from 'vue';
 import { ResponseI } from 'src/models/response.model';
@@ -139,6 +159,7 @@ export default {
     const user = ref<UserRegisterI>({
       fullName: '',
       email: '',
+      username: '',
       password: '',
     });
     const check = ref<boolean>(false);
@@ -191,6 +212,7 @@ export default {
       createAccount,
       form,
       checkVerify,
+      username,
     };
   },
 };

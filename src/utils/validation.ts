@@ -5,6 +5,12 @@ export const email = (val) => {
   return pattern.test(val) || 'Digite um e-mail válido';
 };
 
+//faça o nome de usuário que não pode ter espaços, caracteres especiais e letras maiusculas
+export const username = (val) => {
+  const pattern = /^[a-z0-9_]+$/;
+  return pattern.test(val) || 'Nome de usuário inválido';
+};
+
 export const validateEmail = (val) => {
   const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return pattern.test(val);

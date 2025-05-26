@@ -22,12 +22,12 @@
             <q-form @submit="acessAccount" ref="form">
               <q-input
                 filled
-                label="Email"
+                label="Email ou nome de usuário"
                 label-color="white"
                 v-model="user.email"
-                type="email"
+                type="text"
                 class="q-my-sm"
-                :rules="[required('Email'), email]"
+                :rules="[required('Email ou nome de usuário')]"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-email" />

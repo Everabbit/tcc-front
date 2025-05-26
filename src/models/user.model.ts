@@ -1,6 +1,7 @@
 export interface UserRegisterI {
   fullName: string;
   email: string;
+  username: string;
   password: string;
 }
 

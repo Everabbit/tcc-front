@@ -13,6 +13,7 @@ export default class UserService {
       user.email = toBase64(user.email);
       user.password = toBase64(user.password);
       user.fullName = toBase64(user.fullName);
+      user.username = toBase64(user.username);
 
       const response: AxiosResponse = await api.post(`/users/register`, user);
 
