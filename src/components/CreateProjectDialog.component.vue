@@ -3,7 +3,7 @@
     <q-form @submit="addProject" ref="form">
       <!-- Cabeçalho -->
       <q-card-section class="dialog-header">
-        <div class="text-h6">Criar Novo Projeto</div>
+        <div class="text-h6">Novo Projeto</div>
         <q-btn icon="mdi-close" flat round dense v-close-popup />
       </q-card-section>
 
@@ -85,7 +85,7 @@
               v-model="projectCreateMemberData.id"
               label="Nome de usuário"
               @filter="filterUser"
-              class="col"
+              class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xl-6"
               clearable
             >
               <template v-slot:prepend>
@@ -329,34 +329,56 @@ export default {
 };
 </script>
 
-<style>
-.q-field__label {
-  color: #aaa !important;
+<style scoped>
+.dialog-card {
+  width: 100%;
+  max-width: 800px;
+  min-width: 0; /* Remove a largura mínima fixa */
+  color: var(--text-color);
+  box-sizing: border-box; /* Garante que padding não aumente a largura */
 }
 
-.q-field--outlined .q-field__control:before {
-  border-color: #333 !important;
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #333;
+  padding: 15px 20px;
+  flex-wrap: wrap; /* Permite que os itens quebrem linha em telas pequenas */
 }
 
-.q-date {
-  background-color: var(--card-background) !important;
-  color: var(--text-color) !important;
-  border-radius: var(--border-radius) !important;
+.dialog-content {
+  padding: 20px;
+  overflow: auto; /* Adiciona scroll se o conteúdo for muito grande */
 }
 
-.q-date__header {
-  background-color: rgba(0, 123, 255, 0.2) !important;
+.dialog-footer {
+  border-top: 1px solid #333;
+  padding: 15px 20px;
+  display: flex;
+  flex-wrap: wrap; /* Para botões se ajustarem em telas pequenas */
+  gap: 10px; /* Espaçamento entre itens do footer */
 }
 
-.q-date__calendar-item {
-  color: var(--text-color) !important;
+/* Media Queries para ajustes em diferentes tamanhos de tela */
+@media (max-width: 768px) {
+  .dialog-header,
+  .dialog-content,
+  .dialog-footer {
+    padding: 12px 15px;
+  }
 }
 
-.q-date__calendar-item--out {
-  opacity: 0.5;
-}
+@media (max-width: 480px) {
+  .dialog-header {
+    align-items: flex-start;
+    gap: 10px;
+  }
 
-.q-date__calendar-item--fill {
-  background: rgba(0, 123, 255, 0.1);
+  .dialog-header,
+  .dialog-content,
+  .dialog-footer {
+    padding: 10px 12px;
+  }
 }
 </style>

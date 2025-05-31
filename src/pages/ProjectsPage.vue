@@ -18,7 +18,7 @@
             <span style="font-size: 18px" class="text-weight-bold q-my-none">{{
               project.name
             }}</span>
-            <q-btn flat round dense icon="edit" color="grey-7" />
+            <q-btn flat round dense icon="edit" color="grey-7" @click="toProject(project.id)" />
           </div>
           <p class="project-description">{{ project.description }}</p>
           <div class="project-meta">
@@ -31,12 +31,33 @@
         </q-card-section>
         <q-card-actions class="project-footer">
           <div class="project-members">
-            <q-avatar size="30px" color="primary" text-color="white">JD</q-avatar>
-            <q-avatar size="30px" color="teal" text-color="white" style="margin-left: -8px"
-              >AM</q-avatar
+            <q-avatar size="30px" color="primary" text-color="white">
+              <q-img
+                v-if="project.participation[0].user.image"
+                :src="project.participation[0].user.image"
+              />
+              <span v-else>{{ getUsernameInitials(project.participation[0].user.username) }}</span>
+            </q-avatar>
+            <q-avatar
+              v-if="project.participation.length > 1"
+              size="30px"
+              color="teal"
+              text-color="white"
+              style="margin-left: -8px"
             >
-            <q-avatar size="30px" color="grey-7" text-color="white" style="margin-left: -8px"
-              >+3</q-avatar
+              <q-img
+                v-if="project.participation[1].user.image"
+                :src="project.participation[1].user.image"
+              />
+              <span v-else>{{ getUsernameInitials(project.participation[1].user.username) }}</span>
+            </q-avatar>
+            <q-avatar
+              v-if="project.participation.length > 2"
+              size="30px"
+              color="grey-7"
+              text-color="white"
+              style="margin-left: -8px"
+              >{{ project.participation.length - 2 }}</q-avatar
             >
           </div>
           <div class="project-progress">
@@ -71,12 +92,14 @@ import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import emitter from 'src/utils/event_bus';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 export default {
   components: { CreateProjectDialog },
 
   setup() {
     const $q = useQuasar();
+    const $router = useRouter();
     const showDialog = ref<boolean>(false);
     const projects = ref<ProjectI[]>([]);
 
@@ -104,6 +127,20 @@ export default {
       }
     }
 
+    function getUsernameInitials(username: string): string {
+      if (!username) return '';
+      const names = username.split(' ');
+      if (names.length === 1) {
+        return names[0].substring(0, 2).toUpperCase();
+      } else {
+        return names[0].charAt(0).toUpperCase() + names[names.length - 1].charAt(0).toUpperCase();
+      }
+    }
+
+    function toProject(id: number) {
+      $router.push('projetos/' + id.toString());
+    }
+
     function getRandomColor(): string {
       const pastelColors = [
         '#FFB3BA', // Pastel Red
@@ -121,7 +158,6 @@ export default {
       return pastelColors[randomIndex];
     }
 
-    //função para passar uma Date para uma data legível
     function formatDate(dateString: string): string {
       const date = new Date(dateString);
       const day = date.getDate().toString().padStart(2, '0');
@@ -141,7 +177,16 @@ export default {
       emitter.off('close-project-dialog', closeDialog);
     });
 
-    return { showDialog, projects, openDialog, getRandomColor, formatDate, ProjectStatus };
+    return {
+      showDialog,
+      projects,
+      openDialog,
+      getRandomColor,
+      formatDate,
+      getUsernameInitials,
+      ProjectStatus,
+      toProject,
+    };
   },
 };
 </script>
@@ -234,27 +279,5 @@ export default {
   align-items: center;
   gap: 10px;
   color: #007bff;
-}
-.dialog-card {
-  width: 100%;
-  min-width: 800px;
-  color: var(--text-color);
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #333;
-  padding: 15px 20px;
-}
-
-.dialog-content {
-  padding: 20px;
-}
-
-.dialog-footer {
-  border-top: 1px solid #333;
-  padding: 15px 20px;
 }
 </style>

@@ -20,7 +20,6 @@
           class="new-project-btn hover-lift"
           dense
           unelevated
-          padding="5px 10px"
           color="primary"
           @click="clickButton"
         >
@@ -37,17 +36,21 @@
       <q-scroll-area class="fit">
         <div class="q-pa-sm q-mb-md">
           <div class="sidebar-header q-px-md q-py-sm">
-            <div class="sidebar-logo row items-center">
-              <q-icon name="mdi-fireplace" size="28px" color="primary" />
-              <span class="text-h5 text-weight-medium q-ml-sm text-primary">TaskForge</span>
-              <q-btn
-                v-if="$q.screen.xs || $q.screen.sm"
-                icon="mdi-close"
-                size="20px"
-                @click="leftDrawerOpen = false"
-                flat
-                dense
-              />
+            <div class="full-width row">
+              <div class="col-11 row">
+                <q-icon name="mdi-fireplace" size="28px" color="primary" />
+                <span class="text-h5 text-weight-medium q-ml-sm text-primary">TaskForge</span>
+              </div>
+              <div class="col-1">
+                <q-btn
+                  v-if="$q.screen.xs || $q.screen.sm"
+                  icon="mdi-close"
+                  size="15px"
+                  @click="leftDrawerOpen = false"
+                  flat
+                  dense
+                />
+              </div>
             </div>
           </div>
           <q-separator></q-separator>
@@ -165,15 +168,7 @@ export default {
 
 /* Estilo específico para o botão Novo Projeto */
 .new-project-btn {
-  background: var(--primary-color);
-  color: var(--text-color);
-  padding: 10px 20px;
-  border: none;
   border-radius: var(--border-radius);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   transition: all 0.3s;
 }
 

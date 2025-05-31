@@ -3,7 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 const AUTH_TOKEN_KEY = 'auth_token';
 
 const api: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://192.168.0.111:3000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

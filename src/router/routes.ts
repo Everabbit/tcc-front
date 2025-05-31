@@ -25,6 +25,7 @@ const routes: RouteRecordRaw[] = [
           emitt: 'open-project-dialog',
         },
       },
+      { path: 'projetos/:id', component: () => import('pages/ProjectPage.vue'), name: 'Projeto' },
     ],
   },
 

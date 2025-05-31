@@ -91,3 +91,33 @@ body.body--dark {
   display: block;
   width: 100%;
 }
+
+.q-field__label {
+  color: #aaa !important;
+}
+
+.q-field--outlined .q-field__control:before {
+  border-color: #333 !important;
+}
+
+.q-date {
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
+  border-radius: var(--border-radius) !important;
+}
+
+.q-date__header {
+  background-color: rgba(0, 123, 255, 0.2) !important;
+}
+
+.q-date__calendar-item {
+  color: var(--text-color) !important;
+}
+
+.q-date__calendar-item--out {
+  opacity: 0.5;
+}
+
+.q-date__calendar-item--fill {
+  background: rgba(0, 123, 255, 0.1);
+}
