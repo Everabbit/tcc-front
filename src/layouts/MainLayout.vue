@@ -138,14 +138,7 @@ export default {
         }
         userBasic.value = response.data;
 
-        const nameParts = userBasic.value.fullName.split(' ');
-        if (nameParts.length > 1) {
-          userBasic.value.initials = (
-            nameParts[0].charAt(0) + nameParts[1].charAt(0)
-          ).toUpperCase();
-        } else {
-          userBasic.value.initials = nameParts[0].substring(0, 2).toUpperCase();
-        }
+        userBasic.value.initials = userBasic.value.username.substring(0, 2).toUpperCase();
       } catch (error) {
         console.error('Erro:', error);
         router.push('/');

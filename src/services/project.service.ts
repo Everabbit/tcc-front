@@ -23,7 +23,25 @@ export default class ProjectService {
       }
     } catch (err: any) {
       const response: ResponseI = {
-        message: err,
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async getAll(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.get(`/projects/list`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
         success: false,
       };
       return response;

@@ -91,4 +91,22 @@ export default class UserService {
       return response;
     }
   }
+
+  static async getBasicUserList(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.get(`/users/basicinfolist`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }

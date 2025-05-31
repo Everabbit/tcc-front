@@ -1,3 +1,13 @@
+export interface UserI {
+  id?: number;
+  fullName: string;
+  email: string;
+  password: string;
+  username?: string | null;
+  lastAcess?: Date | null;
+  image?: string | null;
+}
+
 export interface UserRegisterI {
   fullName: string;
   email: string;

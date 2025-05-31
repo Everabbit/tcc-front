@@ -7,8 +7,8 @@ export const email = (val) => {
 
 //faça o nome de usuário que não pode ter espaços, caracteres especiais e letras maiusculas
 export const username = (val) => {
-  const pattern = /^[a-z0-9_]+$/;
-  return pattern.test(val) || 'Nome de usuário inválido';
+  const pattern = /^[a-zA-Z0-9_]+$/;
+  return pattern.test(val) || 'Nome de usuário só pode contar letras ou números';
 };
 
 export const validateEmail = (val) => {

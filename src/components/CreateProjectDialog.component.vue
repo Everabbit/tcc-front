@@ -73,17 +73,25 @@
           <label class="text-caption">Membros Iniciais</label>
 
           <div class="row q-gutter-sm q-mt-sm">
-            <q-input
+            <q-select
+              use-input
               outlined
+              :options="usersList"
+              map-options
+              emit-value
+              option-value="id"
+              option-label="username"
               hide-bottom-space
-              v-model="projectCreateMemberData.email"
-              placeholder="Nome de usuário"
+              v-model="projectCreateMemberData.id"
+              label="Nome de usuário"
+              @filter="filterUser"
               class="col"
+              clearable
             >
               <template v-slot:prepend>
                 <q-icon name="mdi-account-plus" />
               </template>
-            </q-input>
+            </q-select>
 
             <q-select
               outlined
@@ -111,7 +119,7 @@
               :key="index"
               class="q-pa-sm"
             >
-              <q-item-section>{{ member.email }}</q-item-section>
+              <q-item-section>{{ member.username }}</q-item-section>
 
               <q-item-section side>
                 <q-badge color="primary">
@@ -140,12 +148,14 @@
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { ProjectCreateI, ProjectMemberI } from 'src/models/project.model';
 import { clone, fileToBase64, toBase64 } from 'src/utils/transform';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { required, validateEmail, validateSelect } from '../utils/validation';
 import { QForm, useQuasar } from 'quasar';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import emitter from 'src/utils/event_bus';
+import UserService from 'src/services/user.service';
+import { UserBasicI } from 'src/models/user.model';
 
 export default {
   setup() {
@@ -160,10 +170,10 @@ export default {
     });
     const bannerFile = ref<File>(null);
     const roles = clone(RolesValues);
+    const usersList = ref<UserBasicI[]>([]);
+    const userListClone = ref<UserBasicI[]>([]);
 
     const projectCreateMemberData = ref<ProjectMemberI>({
-      email: '',
-      name: '',
       role: 2,
     });
 
@@ -180,13 +190,6 @@ export default {
     });
 
     function addMember() {
-      if (!validateEmail(projectCreateMemberData.value.email)) {
-        return $q.notify({
-          color: 'negative',
-          message: 'O e-mail do membro é obrigatório.',
-          icon: 'mdi-alert-circle',
-        });
-      }
       if (!validateSelect(projectCreateMemberData.value.role)) {
         return $q.notify({
           color: 'negative',
@@ -195,8 +198,19 @@ export default {
         });
       }
 
+      const user = usersList.value.find((user) => user.id === projectCreateMemberData.value.id);
+
+      projectCreateMemberData.value = {
+        id: user.id,
+        username: user.username,
+        image: user.username,
+        initials: user.initials,
+        role: projectCreateMemberData.value.role,
+      };
+
       projectCreateData.value.members.push(clone(projectCreateMemberData.value));
-      projectCreateMemberData.value.email = '';
+      projectCreateMemberData.value.id = null;
+      projectCreateMemberData.value.role = 2;
     }
 
     function removeMember(index: number) {
@@ -205,7 +219,6 @@ export default {
 
     async function addProject(): Promise<void> {
       try {
-        // Validação programática
         const isValid: boolean = await form.value.validate();
 
         if (isValid) {
@@ -235,8 +248,7 @@ export default {
           };
           bannerFile.value = null;
           projectCreateMemberData.value = {
-            email: '',
-            name: '',
+            id: null,
             role: 2,
           };
 
@@ -249,13 +261,55 @@ export default {
           });
         }
       } catch (error) {
-        console.error('Erro na validação:', error);
+        console.error('Erro na validação:', error.message);
         $q.notify({
           type: 'negative',
-          message: 'Ocorreu um erro ao validar o formulário',
+          message: error.message || 'Ocorreu um erro ao validar o formulário',
         });
       }
     }
+
+    async function getUserList(): Promise<void> {
+      try {
+        const response: ResponseI = await UserService.getBasicUserList();
+
+        if (!response.success) {
+          throw Error(response.message);
+        }
+        usersList.value = response.data;
+        userListClone.value = response.data;
+
+        usersList.value.forEach((userBasic) => {
+          userBasic.initials = userBasic.username.substring(0, 2).toUpperCase();
+        });
+      } catch (error) {
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: 'Ocorreu um erro ao buscar lista de usuários.',
+        });
+      }
+    }
+
+    function filterUser(val: string, update: (callbackFn: () => void) => void): void {
+      if (val === '') {
+        update(() => {
+          usersList.value = userListClone.value;
+        });
+        return;
+      }
+
+      update(() => {
+        const needle = val.toLowerCase();
+        usersList.value = userListClone.value.filter(
+          (v) => v.username.toLowerCase().indexOf(needle) > -1,
+        );
+      });
+    }
+
+    onMounted(async () => {
+      await getUserList();
+    });
 
     return {
       projectCreateData,
@@ -268,6 +322,8 @@ export default {
       addProject,
       form,
       bannerFile,
+      usersList,
+      filterUser,
     };
   },
 };
