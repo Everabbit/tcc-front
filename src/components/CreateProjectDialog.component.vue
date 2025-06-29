@@ -13,6 +13,7 @@
         <q-input
           label="Nome do Projeto *"
           v-model="projectCreateData.name"
+          autofocus
           outlined
           class="q-mb-md"
           :rules="[required('Nome do projeto')]"
@@ -34,9 +35,10 @@
           <q-input
             label="Prazo do Projeto"
             v-model="formattedData"
+            readonly
             outlined
             mask="##/##/####"
-            :rules="[(val) => typeof val === 'string' || 'Campo obrigatório']"
+            :rules="[(val) => typeof val === 'string' || '']"
             class="q-mt-sm"
           >
             <template v-slot:append>

@@ -1,6 +1,7 @@
 import { ProjectStatus } from 'src/enums/project_status.enum';
 import { RolesEnum } from 'src/enums/roles.enum';
 import { UserI } from './user.model';
+import { VersionI } from './version.model';
 
 export interface ProjectI {
   id?: number;
@@ -12,6 +13,9 @@ export interface ProjectI {
   deadline?: Date | null;
   progress: number;
   participation?: ProjectParticipationI[];
+  createdAt?: Date;
+  updatedAt?: Date;
+  versions?: VersionI[];
 }
 
 export interface ProjectParticipationI {

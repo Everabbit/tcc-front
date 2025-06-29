@@ -1,7 +1,7 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md">
-    <q-dialog v-model="showDialog">
-      <CreateProjectDialog></CreateProjectDialog>
+    <q-dialog persistent v-model="showDialog">
+      <CreateProjectDialog v-if="showDialog"></CreateProjectDialog>
     </q-dialog>
 
     <div class="projects-grid col-12 col-md-10 col-lg-9">
@@ -23,15 +23,20 @@
           <p class="project-description">{{ project.description }}</p>
           <div class="project-meta">
             <q-badge color="green" label="Em andamento" />
-            <div class="text-caption text-grey">
+            <div v-if="project.deadline" class="text-caption text-grey">
               <q-icon name="event" size="16px" class="q-mr-sm" />
-              <span>Prazo: {{ formatDate(project.deadline.toString()) }}</span>
+              <span>Prazo: {{ formatDate(project.deadline) }}</span>
             </div>
           </div>
         </q-card-section>
         <q-card-actions class="project-footer">
           <div class="project-members">
-            <q-avatar size="30px" color="primary" text-color="white">
+            <q-avatar
+              v-if="project.participation[0] && project.participation[0].user"
+              size="30px"
+              color="primary"
+              text-color="white"
+            >
               <q-img
                 v-if="project.participation[0].user.image"
                 :src="project.participation[0].user.image"
@@ -39,7 +44,11 @@
               <span v-else>{{ getUsernameInitials(project.participation[0].user.username) }}</span>
             </q-avatar>
             <q-avatar
-              v-if="project.participation.length > 1"
+              v-if="
+                project.participation.length > 1 &&
+                project.participation[1] &&
+                project.participation[1].user
+              "
               size="30px"
               color="teal"
               text-color="white"
@@ -57,7 +66,7 @@
               color="grey-7"
               text-color="white"
               style="margin-left: -8px"
-              >{{ project.participation.length - 2 }}</q-avatar
+              >+{{ project.participation.length - 2 }}</q-avatar
             >
           </div>
           <div class="project-progress">
@@ -158,11 +167,14 @@ export default {
       return pastelColors[randomIndex];
     }
 
-    function formatDate(dateString: string): string {
-      const date = new Date(dateString);
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
+    function formatDate(date: Date): string {
+      if (!date) {
+        return '';
+      }
+      const newDate = new Date(date.toString());
+      const day = newDate.getDate().toString().padStart(2, '0');
+      const month = (newDate.getMonth() + 1).toString().padStart(2, '0');
+      const year = newDate.getFullYear();
       return `${day}/${month}/${year}`;
     }
 

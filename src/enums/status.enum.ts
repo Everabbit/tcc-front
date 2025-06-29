@@ -9,9 +9,41 @@ export enum TaskStatusEnum {
 
 export enum VersionStatusEnum {
   DRAFT = 0, // Rascunho
-  TESTING = 1, // Em testes
-  STAGING = 2, // Preparada pro deploy
-  RELEASED = 3, // Já lançada
-  DEPRECATED = 4, // Obsoleta
-  ROLLED_BACK = 5, // Revertida por bugão
+  DEVELOPMENT = 1, // Em desenvolvimento
+  TESTING = 2, // Em testes
+  STAGING = 3, // Preparada pro deploy
+  RELEASED = 4, // Já lançada
+  DEPRECATED = 5, // Obsoleta
+  ROLLED_BACK = 6, // Revertida por bugão
 }
+
+export const VersionStatus = [
+  {
+    id: VersionStatusEnum.DRAFT,
+    name: 'Rascunho',
+  },
+  {
+    id: VersionStatusEnum.DEVELOPMENT,
+    name: 'Em desenvolvimento',
+  },
+  {
+    id: VersionStatusEnum.TESTING,
+    name: 'Em testes',
+  },
+  {
+    id: VersionStatusEnum.STAGING,
+    name: 'Preparada pro deploy',
+  },
+  {
+    id: VersionStatusEnum.RELEASED,
+    name: 'Já lançada',
+  },
+  {
+    id: VersionStatusEnum.DEPRECATED,
+    name: 'Obsoleta',
+  },
+  {
+    id: VersionStatusEnum.ROLLED_BACK,
+    name: 'Revertida',
+  },
+];

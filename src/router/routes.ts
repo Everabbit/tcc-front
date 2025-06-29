@@ -25,7 +25,12 @@ const routes: RouteRecordRaw[] = [
           emitt: 'open-project-dialog',
         },
       },
-      { path: 'projetos/:id', component: () => import('pages/ProjectPage.vue'), name: 'Projeto' },
+      {
+        path: 'projetos/:id',
+        component: () => import('pages/ProjectPage.vue'),
+        name: 'Projeto',
+        props: true,
+      },
     ],
   },
 

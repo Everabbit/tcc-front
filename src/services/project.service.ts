@@ -47,4 +47,26 @@ export default class ProjectService {
       return response;
     }
   }
+
+  static async getOne(id: string): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+
+      const response: AxiosResponse = await api.get(`/projects/${id}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }
