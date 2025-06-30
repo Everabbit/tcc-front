@@ -1,6 +1,6 @@
 <template>
   <q-card class="dialog-card">
-    <q-form ref="form" v-on:submit="addProject">
+    <q-form ref="form" v-on:submit="addVersion">
       <!-- Cabeçalho -->
       <q-card-section class="dialog-header">
         <div class="text-h6">Nova Versão</div>
@@ -181,7 +181,7 @@ export default {
       return formatted;
     });
 
-    async function addProject(): Promise<void> {
+    async function addVersion(): Promise<void> {
       try {
         const isValid: boolean = await form.value.validate();
 
@@ -231,7 +231,7 @@ export default {
       formattedStartDate,
       form,
       status,
-      addProject,
+      addVersion,
     };
   },
 };

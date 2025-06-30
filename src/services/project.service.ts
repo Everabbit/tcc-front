@@ -69,4 +69,56 @@ export default class ProjectService {
       return response;
     }
   }
+
+  static async addMembers(id: string, members: FormData): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+
+      if (!members) {
+        throw Error('Informe membros válidos!');
+      }
+
+      const response: AxiosResponse = await api.post(`/projects/addusers/${id}`, members);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async removeMember(id: string, memberId: number): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+
+      if (!memberId) {
+        throw Error('Informe membros válidos!');
+      }
+      console.log(`/projects/removeuser/${id}/${memberId}`);
+      const response: AxiosResponse = await api.delete(`/projects/removeuser/${id}/${memberId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }

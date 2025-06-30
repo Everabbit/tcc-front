@@ -131,7 +131,7 @@ export default {
         console.error('Erro:', error);
         $q.notify({
           type: 'negative',
-          message: 'Ocorreu um erro ao buscar lista de projetos.',
+          message: error.message || 'Ocorreu um erro ao buscar projetos.',
         });
       }
     }
