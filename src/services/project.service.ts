@@ -30,6 +30,57 @@ export default class ProjectService {
     }
   }
 
+  static async update(id: string, project: FormData): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+      if (!project) {
+        throw Error('Informe um projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.put(`/projects/update/${id}`, project, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async delete(id: string): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/projects/remove/${id}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async getAll(): Promise<ResponseI> {
     try {
       const response: AxiosResponse = await api.get(`/projects/list`);

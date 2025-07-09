@@ -224,6 +224,7 @@ export default {
         const isValid: boolean = await form.value.validate();
 
         if (isValid) {
+          $q.loading.show();
           const formData: FormData = new FormData();
           formData.append('project', JSON.stringify(projectCreateData.value));
           if (bannerFile.value) {
@@ -235,7 +236,7 @@ export default {
           if (!response.success) {
             throw Error(response.message);
           }
-
+          $q.loading.hide();
           $q.notify({
             type: 'positive',
             message: 'Projeto criado com successo!',
@@ -263,6 +264,7 @@ export default {
           });
         }
       } catch (error) {
+        $q.loading.hide();
         console.error('Erro na validação:', error.message);
         $q.notify({
           type: 'negative',

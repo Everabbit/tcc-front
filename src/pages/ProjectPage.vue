@@ -1,18 +1,5 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md">
-    <q-page-sticky position="bottom-right" :offset="[18, 18]">
-      <q-btn color="primary" icon="mdi-check" round size="20px">
-        <q-tooltip
-          class="bg-primary text-body2"
-          position="top"
-          anchor="bottom middle"
-          self="top middle"
-          :offset="[10, 10]"
-        >
-          Salvar
-        </q-tooltip>
-      </q-btn>
-    </q-page-sticky>
     <q-dialog persistent v-model="showDialogVersion">
       <CreateVersionDialog :project-id="id" v-if="showDialogVersion"></CreateVersionDialog>
     </q-dialog>
@@ -25,92 +12,146 @@
         <span class="text-h5 q-ml-sm">{{ project.name }}</span>
       </div>
 
-      <!-- Banner -->
-      <div
-        v-if="!project.banner"
-        class="project-banner q-mb-lg"
-        :style="`background-color: ${getRandomColor()};`"
-      ></div>
-      <q-img v-else :src="project.banner" class="project-banner q-mb-lg"></q-img>
+      <!-- Banner Editável -->
+      <div class="project-banner q-mb-lg">
+        <input
+          type="file"
+          ref="bannerInput"
+          accept="image/*"
+          style="display: none"
+          @change="handleBannerChange"
+        />
+
+        <div
+          v-if="!project.banner"
+          class="banner-placeholder"
+          :style="`background-color: ${getRandomColor()};`"
+          @click="$refs.bannerInput.click()"
+        >
+          <q-icon name="add_photo_alternate" size="2rem" />
+          <div>Clique para adicionar uma imagem</div>
+        </div>
+
+        <template v-else>
+          <q-img :src="project.banner" class="editable-banner" @click="$refs.bannerInput.click()">
+            <div class="banner-overlay">
+              <q-icon name="edit" size="1.5rem" />
+              <div>Clique para trocar a imagem</div>
+              <q-btn
+                class="delete-btn"
+                size="15px"
+                icon="mdi-delete"
+                round
+                color="red"
+                @click.stop="handleBannerDelete"
+              />
+            </div>
+          </q-img>
+        </template>
+      </div>
 
       <!-- Info do Projeto (CAMPOS EDITÁVEIS) -->
       <q-card class="q-mb-md card-project">
         <q-card-section>
-          <div class="text-h6 q-mb-sm">Informações do Projeto</div>
-          <q-separator />
-          <div class="row q-col-gutter-lg q-mt-xs">
-            <div class="col-12 col-md-6">
-              <!-- Nome -->
-              <div class="text-caption text-grey">Nome</div>
-              <q-input v-model="project.name" dense outlined class="q-mt-xs" />
-
-              <!-- Status -->
-              <div class="text-caption text-grey q-mt-md">Status</div>
-              <q-select
-                v-model="project.status"
-                :options="['Em andamento', 'Concluído', 'Pausado']"
-                dense
-                outlined
-                emit-value
-                map-options
-                class="q-mt-xs"
-              />
-
-              <!-- Data de Criação (readonly) -->
-              <div class="text-caption text-grey q-mt-md">Data de Criação</div>
-              <div>{{ formatDate(project.createdAt) }}</div>
-            </div>
-            <div class="col-12 col-md-6">
-              <!-- Prazo -->
-              <div class="q-mb-md">
+          <q-form ref="form">
+            <div class="text-h6 q-mb-sm">Informações do Projeto</div>
+            <q-separator />
+            <div class="row q-col-gutter-lg q-mt-xs">
+              <div class="col-12 col-md-6">
+                <!-- Nome -->
                 <q-input
-                  label="Prazo do Projeto"
-                  v-model="formattedData"
+                  label="Nome do Projeto *"
+                  v-model="project.name"
+                  autofocus
+                  outlined
+                  class="q-mb-md"
+                  :rules="[required('Nome do projeto')]"
+                  hide-bottom-space
+                />
+
+                <!-- Status -->
+                <q-select
+                  outlined
+                  v-model="project.status"
+                  :options="status"
+                  map-options
+                  option-label="name"
+                  option-value="id"
+                  emit-value
+                  label="Status"
+                  class="col q-mb-md"
+                >
+                  <template v-slot:prepend>
+                    <q-icon name="mdi-developer-board" />
+                  </template>
+                </q-select>
+
+                <!-- Data de Criação (readonly) -->
+                <q-input
+                  label="Data de Criação"
+                  :model-value="formatDate(project.createdAt)"
                   readonly
                   outlined
-                  mask="##/##/####"
-                  :rules="[(val) => typeof val === 'string' || '']"
-                  class="q-mt-sm"
-                >
-                  <template v-slot:append>
-                    <q-icon name="mdi-calendar" class="cursor-pointer">
-                      <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                        <q-date
-                          v-model="project.deadline"
-                          minimal
-                          color="primary"
-                          text-color="white"
-                          today-btn
-                        >
-                          <div class="row items-center justify-end q-gutter-sm">
-                            <q-btn label="OK" color="primary" flat v-close-popup />
-                          </div>
-                        </q-date>
-                      </q-popup-proxy>
-                    </q-icon>
-                  </template>
-                </q-input>
+                  class="q-mb-md"
+                />
               </div>
-
-              <!-- Progresso -->
-              <div class="text-caption text-grey q-mt-md">Progresso</div>
-              <div class="row">
-                <div class="col-11 q-py-sm">
-                  <q-linear-progress :value="project.progress / 100" color="primary" />
+              <div class="col-12 col-md-6">
+                <!-- Prazo -->
+                <div class="q-mb-md">
+                  <q-input
+                    label="Prazo do Projeto"
+                    v-model="formattedData"
+                    readonly
+                    outlined
+                    mask="##/##/####"
+                    :rules="[(val) => typeof val === 'string' || '']"
+                  >
+                    <template v-slot:append>
+                      <q-icon name="mdi-calendar" class="cursor-pointer">
+                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                          <q-date
+                            v-model="deadline"
+                            minimal
+                            color="primary"
+                            text-color="white"
+                            today-btn
+                          >
+                            <div class="row items-center justify-end q-gutter-sm">
+                              <q-btn label="OK" color="primary" flat v-close-popup />
+                            </div>
+                          </q-date>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
                 </div>
 
-                <div class="q-ml-sm">
-                  <span>{{ project.progress }}%</span>
+                <!-- Progresso -->
+                <div class="text-caption text-grey q-mt-md">Progresso</div>
+                <div class="row">
+                  <div class="col-11 q-py-sm">
+                    <q-linear-progress :value="project.progress / 100" color="primary" />
+                  </div>
+
+                  <div class="q-ml-sm">
+                    <span>{{ project.progress }}%</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Descrição -->
-          <div class="q-mt-md">
-            <div class="text-caption text-grey">Descrição</div>
-            <q-input v-model="project.description" type="textarea" outlined dense class="q-mt-xs" />
-          </div>
+            <!-- Descrição -->
+            <div>
+              <q-input
+                label="Descrição (Opcional)"
+                v-model="project.description"
+                outlined
+                type="textarea"
+                rows="3"
+                class="q-mb-md"
+              />
+            </div>
+          </q-form>
         </q-card-section>
       </q-card>
 
@@ -211,14 +252,45 @@
         </q-card-section>
       </q-card>
     </div>
+    <q-page-sticky position="bottom-right" :offset="[18, 18]">
+      <q-btn color="red" icon="mdi-delete" round size="20px" @click="deleteProject">
+        <q-tooltip
+          class="bg-red text-body2"
+          position="top"
+          anchor="bottom middle"
+          self="top middle"
+          :offset="[10, 10]"
+        >
+          Remover
+        </q-tooltip>
+      </q-btn>
+      <q-btn
+        class="q-ml-sm"
+        color="primary"
+        icon="mdi-check"
+        round
+        size="20px"
+        @click="updateProject"
+      >
+        <q-tooltip
+          class="bg-primary text-body2"
+          position="top"
+          anchor="bottom middle"
+          self="top middle"
+          :offset="[10, 10]"
+        >
+          Salvar
+        </q-tooltip>
+      </q-btn>
+    </q-page-sticky>
   </q-page>
 </template>
 
 <script lang="ts">
-import { useQuasar } from 'quasar';
+import { QForm, useQuasar } from 'quasar';
 import AddMemberDialogCompoent from 'src/components/AddMemberDialog.compoent.vue';
 import CreateVersionDialog from 'src/components/CreateVersionDialog.component.vue';
-import { ProjectStatus } from 'src/enums/project_status.enum';
+import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesValues } from 'src/enums/roles.enum';
 import { VersionStatus } from 'src/enums/status.enum';
 import { ProjectI } from 'src/models/project.model';
@@ -226,6 +298,7 @@ import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
+import { required } from 'src/utils/validation';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -254,6 +327,10 @@ export default {
     const showDialogVersion = ref<boolean>(false);
     const showDialogMembers = ref<boolean>(false);
     const versionStatus = clone(VersionStatus);
+    const deadline = ref<string>(null);
+    const status = clone(ProjectStatusValues);
+    const form = ref<QForm>(null);
+    const bannerFile = ref<File>(null);
 
     async function getProject(): Promise<void> {
       try {
@@ -271,9 +348,33 @@ export default {
         $router.push('/p/projetos');
       }
     }
+    function handleBannerChange(e) {
+      const file = e.target.files[0];
+      if (file) {
+        bannerFile.value = file;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          this.project.banner = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+    function handleBannerDelete() {
+      project.value.banner = null;
+      bannerFile.value = null;
+    }
     const formattedData = computed<string>(() => {
-      console.log(project.value.deadline);
-      if (project.value.deadline) {
+      if (deadline.value) {
+        let formatted: string = deadline.value;
+
+        if (formatted) {
+          const parts: string[] = formatted.split('/');
+          if (parts.length === 3) {
+            return (formatted = `${parts[2]}/${parts[1]}/${parts[0]}`);
+          }
+        }
+        return formatted;
+      } else if (project.value.deadline) {
         let formatted: string = project.value.deadline.toString();
         formatted = formatted.substring(0, 10);
 
@@ -288,6 +389,84 @@ export default {
         return '';
       }
     });
+
+    async function updateProject(): Promise<void> {
+      try {
+        const isValid: boolean = await form.value.validate();
+
+        if (isValid) {
+          $q.loading.show();
+          const formData: FormData = new FormData();
+          formData.append('project', JSON.stringify(project.value));
+          if (bannerFile.value) {
+            formData.append('banner', bannerFile.value);
+          }
+
+          const response: ResponseI = await ProjectService.update(props.id, formData);
+
+          if (!response.success) {
+            throw Error(response.message);
+          }
+          $q.loading.hide();
+          $q.notify({
+            type: 'positive',
+            message: 'Projeto atualizado com successo!',
+          });
+
+          //reescrever formulário
+          await getProject();
+        } else {
+          $q.notify({
+            type: 'negative',
+            message: 'Corrija os erros no formulário',
+          });
+        }
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro na validação:', error.message);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao validar o formulário',
+        });
+      }
+    }
+    async function deleteProject(): Promise<void> {
+      try {
+        $q.dialog({
+          title: 'Confirmar Remoção',
+          message: 'Tem certeza de que deseja remover permanentemente este projeto?',
+          cancel: {
+            label: 'Não',
+            color: 'grey',
+            flat: true,
+          },
+          ok: {
+            label: 'Sim',
+            color: 'red',
+          },
+          persistent: false,
+        }).onOk(async () => {
+          $q.loading.show();
+          const response: ResponseI = await ProjectService.delete(props.id);
+          if (!response.success) {
+            throw Error(response.message);
+          }
+          $q.loading.hide();
+          $q.notify({
+            type: 'positive',
+            message: 'Projeto removido com successo!',
+          });
+          $router.push('/p/projetos');
+        });
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro na validação:', error.message);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao remover projeto',
+        });
+      }
+    }
 
     function getRandomColor(): string {
       const pastelColors = [
@@ -398,20 +577,79 @@ export default {
       createVersion,
       removeMember,
       formattedData,
+      deadline,
+      required,
+      status,
+      handleBannerChange,
+      updateProject,
+      form,
+      handleBannerDelete,
+      deleteProject,
     };
   },
 };
 </script>
 
 <style scoped>
+.card-project {
+  border-left: 4px solid var(--primary-color);
+}
+
 .project-banner {
+  position: relative;
   height: 200px;
+  cursor: pointer;
   border-radius: 8px;
   background-size: cover;
   background-position: center;
-}
+  overflow: hidden;
 
-.card-project {
-  border-left: 4px solid var(--primary-color);
+  .banner-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+  }
+
+  .editable-banner {
+    width: 100%;
+    height: 100%;
+
+    .banner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    &:hover .banner-overlay {
+      opacity: 1;
+    }
+  }
+
+  .delete-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 10;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
 }
 </style>

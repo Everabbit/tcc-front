@@ -87,6 +87,12 @@ export default defineConfig((/* ctx */) => {
     framework: {
       config: {
         dark: true,
+        loading: {
+          delay: 0,
+          message: 'Aguarde...',
+          spinnerSize: 100,
+          customClass: 'custom-loading',
+        },
       },
       iconSet: 'mdi-v7',
 
@@ -101,7 +107,7 @@ export default defineConfig((/* ctx */) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify', 'Dialog'],
+      plugins: ['Notify', 'Dialog', 'Loading'],
     },
 
     // animations: 'all', // --- includes all animations
