@@ -1,10 +1,13 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md">
     <q-dialog persistent v-model="showDialogVersion">
-      <CreateVersionDialog :project-id="id" v-if="showDialogVersion"></CreateVersionDialog>
+      <CreateVersionDialog :project-id="idParse" v-if="showDialogVersion"></CreateVersionDialog>
     </q-dialog>
     <q-dialog persistent v-model="showDialogMembers">
-      <AddMemberDialogCompoent :project-id="id" v-if="showDialogMembers"></AddMemberDialogCompoent>
+      <AddMemberDialogCompoent
+        :project-id="idParse"
+        v-if="showDialogMembers"
+      ></AddMemberDialogCompoent>
     </q-dialog>
     <div class="col-12 col-md-10 col-lg-9 q-mb-md">
       <div class="q-mb-md">
@@ -297,7 +300,7 @@ import { ProjectI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import emitter from 'src/utils/event_bus';
-import { clone } from 'src/utils/transform';
+import { clone, fromBase64 } from 'src/utils/transform';
 import { required } from 'src/utils/validation';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { ref } from 'vue';
@@ -331,10 +334,11 @@ export default {
     const status = clone(ProjectStatusValues);
     const form = ref<QForm>(null);
     const bannerFile = ref<File>(null);
+    const idParse = ref<string>(fromBase64(props.id));
 
     async function getProject(): Promise<void> {
       try {
-        const response: ResponseI = await ProjectService.getOne(props.id);
+        const response: ResponseI = await ProjectService.getOne(idParse.value);
         if (!response.success) {
           throw Error(response.message);
         }
@@ -402,7 +406,7 @@ export default {
             formData.append('banner', bannerFile.value);
           }
 
-          const response: ResponseI = await ProjectService.update(props.id, formData);
+          const response: ResponseI = await ProjectService.update(idParse.value, formData);
 
           if (!response.success) {
             throw Error(response.message);
@@ -447,7 +451,7 @@ export default {
           persistent: false,
         }).onOk(async () => {
           $q.loading.show();
-          const response: ResponseI = await ProjectService.delete(props.id);
+          const response: ResponseI = await ProjectService.delete(idParse.value);
           if (!response.success) {
             throw Error(response.message);
           }
@@ -470,16 +474,16 @@ export default {
 
     function getRandomColor(): string {
       const pastelColors = [
-        '#FFB3BA', // Pastel Red
-        '#FFDFBA', // Pastel Orange
-        '#FFFFBA', // Pastel Yellow
-        '#BAFFC9', // Pastel Green
+        // '#FFB3BA', // Pastel Red
+        // '#FFDFBA', // Pastel Orange
+        // '#FFFFBA', // Pastel Yellow
+        // '#BAFFC9', // Pastel Green
         '#BAE1FF', // Pastel Blue
-        '#E0BBE4', // Pastel Purple
-        '#FFC0CB', // Pink
-        '#F0E68C', // Khaki
-        '#ADD8E6', // Light Blue
-        '#90EE90', // Light Green
+        // '#E0BBE4', // Pastel Purple
+        // '#FFC0CB', // Pink
+        // '#F0E68C', // Khaki
+        // '#ADD8E6', // Light Blue
+        // '#90EE90', // Light Green
       ];
       const randomIndex = Math.floor(Math.random() * pastelColors.length);
       return pastelColors[randomIndex];
@@ -506,11 +510,17 @@ export default {
       }
     }
 
-    function createVersion(): void {
+    async function createVersion(): Promise<void> {
       showDialogVersion.value = !showDialogVersion.value;
+      if (showDialogVersion.value === false) {
+        await getProject();
+      }
     }
-    function addmembersDialog(): void {
+    async function addmembersDialog(): Promise<void> {
       showDialogMembers.value = !showDialogMembers.value;
+      if (showDialogMembers.value === false) {
+        await getProject();
+      }
     }
 
     function removeMember(index: number): void {
@@ -531,7 +541,7 @@ export default {
         persistent: false,
       }).onOk(async () => {
         try {
-          const response: ResponseI = await ProjectService.removeMember(props.id, index);
+          const response: ResponseI = await ProjectService.removeMember(idParse.value, index);
 
           if (!response.success) {
             throw Error(response.message);
@@ -585,6 +595,7 @@ export default {
       form,
       handleBannerDelete,
       deleteProject,
+      idParse,
     };
   },
 };

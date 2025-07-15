@@ -24,7 +24,7 @@
           @click="clickButton"
         >
           <q-icon name="mdi-plus" size="15px" class="q-mr-sm" />
-          <span style="font-size: 15px">Novo Projeto</span>
+          <span style="font-size: 15px">{{ $route.meta.label }}</span>
         </q-btn>
       </q-toolbar>
     </q-header>
@@ -63,7 +63,7 @@
                 v-ripple
                 exact
                 class="q-mb-xs"
-                :class="{ 'active-menu-item': $route.path === item.link }"
+                :class="{ 'active-menu-item': $route.path.indexOf(item.link) > 0 }"
                 :to="item.link"
               >
                 <q-item-section avatar>

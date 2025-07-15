@@ -24,4 +24,26 @@ export default class VersionService {
       return response;
     }
   }
+
+  static async getAll(projectId: string): Promise<ResponseI> {
+    try {
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.get(`/versions/list/${projectId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }

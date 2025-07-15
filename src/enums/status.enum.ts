@@ -21,29 +21,36 @@ export const VersionStatus = [
   {
     id: VersionStatusEnum.DRAFT,
     name: 'Rascunho',
+    color: 'grey-6',
   },
   {
     id: VersionStatusEnum.DEVELOPMENT,
     name: 'Em desenvolvimento',
+    color: 'blue',
   },
   {
     id: VersionStatusEnum.TESTING,
     name: 'Em testes',
+    color: 'amber',
   },
   {
     id: VersionStatusEnum.STAGING,
     name: 'Preparada pro deploy',
+    color: 'light-green',
   },
   {
     id: VersionStatusEnum.RELEASED,
     name: 'Já lançada',
+    color: 'positive',
   },
   {
     id: VersionStatusEnum.DEPRECATED,
     name: 'Obsoleta',
+    color: 'grey-8',
   },
   {
     id: VersionStatusEnum.ROLLED_BACK,
     name: 'Revertida',
+    color: 'negative',
   },
 ];

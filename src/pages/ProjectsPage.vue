@@ -1,12 +1,56 @@
 <template>
-  <q-page class="row justify-center items-start q-pa-md">
+  <q-page class="row justify-center items-start q-pa-md" style="min-height: 0px">
     <q-dialog persistent v-model="showDialog">
       <CreateProjectDialog v-if="showDialog"></CreateProjectDialog>
     </q-dialog>
 
+    <div class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm">
+      <!-- Filtro de Status -->
+      <div class="filter-group">
+        <span class="filter-label">Status:</span>
+        <q-select
+          dense
+          outlined
+          v-model="statusFilter"
+          :options="statusOptions"
+          map-options
+          emit-value
+          option-value="id"
+          option-label="value"
+          style="min-width: 150px"
+          class="filter-select"
+          @update:model-value="filterProjects"
+        />
+      </div>
+
+      <!-- Filtro de Ordenação -->
+      <div class="filter-group">
+        <span class="filter-label">Ordenar por:</span>
+        <q-select
+          dense
+          outlined
+          v-model="sortFilter"
+          :options="sortOptions"
+          map-options
+          emit-value
+          option-value="id"
+          option-label="value"
+          style="min-width: 180px"
+          class="filter-select"
+          @update:model-value="filterProjects"
+        />
+      </div>
+    </div>
+
     <div class="projects-grid col-12 col-md-10 col-lg-9">
       <!-- Cards de projetos -->
-      <q-card flat v-for="project in projects" :key="project.id" class="project-card">
+      <q-card
+        flat
+        v-for="project in projects"
+        :key="project.id"
+        class="project-card"
+        @click="toVersions(project.id)"
+      >
         <div
           v-if="!project.banner"
           class="project-banner"
@@ -18,11 +62,21 @@
             <span style="font-size: 18px" class="text-weight-bold q-my-none">{{
               project.name
             }}</span>
-            <q-btn flat round dense icon="edit" color="grey-7" @click="toProject(project.id)" />
+            <q-btn
+              flat
+              round
+              dense
+              icon="edit"
+              color="grey-7"
+              @click.stop="toProject(project.id)"
+            />
           </div>
           <p class="project-description">{{ project.description }}</p>
           <div class="project-meta">
-            <q-badge color="green" label="Em andamento" />
+            <q-badge
+              :color="getProjectStatusColor(project.status)"
+              :label="getProjectStatusName(project.status)"
+            />
             <div v-if="project.deadline" class="text-caption text-grey">
               <q-icon name="event" size="16px" class="q-mr-sm" />
               <span>Prazo: {{ formatDate(project.deadline) }}</span>
@@ -95,11 +149,14 @@
 <script lang="ts">
 import { useQuasar } from 'quasar';
 import CreateProjectDialog from 'src/components/CreateProjectDialog.component.vue';
-import { ProjectStatus } from 'src/enums/project_status.enum';
+import { filterEnum } from 'src/enums/filter.enum';
+import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
+import { sortEnum } from 'src/enums/sort.enum';
 import { ProjectI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import emitter from 'src/utils/event_bus';
+import { clone, toBase64 } from 'src/utils/transform';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -111,28 +168,97 @@ export default {
     const $router = useRouter();
     const showDialog = ref<boolean>(false);
     const projects = ref<ProjectI[]>([]);
+    const projectsClone = ref<ProjectI[]>([]);
+    const StatusValues = clone(ProjectStatusValues);
 
-    function openDialog() {
+    const statusFilter = ref<number>(1);
+    const statusOptions = ref<{ id: number; value: string }[]>([
+      { id: filterEnum.ALL, value: 'Todos' },
+      { id: filterEnum.ACTIVED, value: 'Ativos' },
+      { id: filterEnum.UNACTIVE, value: 'Inativos' },
+      { id: filterEnum.ARCHIVED, value: 'Arquivados' },
+    ]);
+
+    const sortFilter = ref<number>(1);
+    const sortOptions = ref<{ id: number; value: string }[]>([
+      { id: sortEnum.NEWEST, value: 'Mais recentes' },
+      { id: sortEnum.OLDEST, value: 'Mais antigos' },
+      { id: sortEnum.DATE_LIMIT, value: 'Prazo mais próximo' },
+      { id: sortEnum.A_Z, value: 'Nome (A-Z)' },
+    ]);
+
+    function openDialog(): void {
       showDialog.value = true;
     }
 
-    function closeDialog() {
+    async function closeDialog(): Promise<void> {
       showDialog.value = false;
+      await getProjects();
     }
 
     async function getProjects(): Promise<void> {
       try {
+        $q.loading.show();
         const response: ResponseI = await ProjectService.getAll();
         if (!response.success) {
           throw Error(response.message);
         }
+        $q.loading.hide();
         projects.value = response.data;
+        projectsClone.value = response.data;
       } catch (error) {
+        $q.loading.hide();
         console.error('Erro:', error);
         $q.notify({
           type: 'negative',
           message: error.message || 'Ocorreu um erro ao buscar projetos.',
         });
+      }
+    }
+
+    function filterProjects(): void {
+      projects.value = clone(projectsClone.value);
+      switch (statusFilter.value) {
+        case filterEnum.ALL:
+          projects.value = clone(projectsClone.value);
+          break;
+        case filterEnum.ACTIVED:
+          projects.value = projects.value.filter(
+            (project) => project.status === ProjectStatus.ACTIVE,
+          );
+          break;
+        case filterEnum.UNACTIVE:
+          projects.value = projects.value.filter(
+            (project) => project.status === ProjectStatus.UNACTIVE,
+          );
+          break;
+        case filterEnum.ARCHIVED:
+          projects.value = projects.value.filter(
+            (project) => project.status === ProjectStatus.ARCHIVED,
+          );
+          break;
+      }
+      switch (sortFilter.value) {
+        case sortEnum.NEWEST:
+          projects.value.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
+          break;
+        case sortEnum.OLDEST:
+          projects.value.sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          );
+          break;
+        case sortEnum.DATE_LIMIT:
+          projects.value.sort((a, b) => {
+            if (!a.deadline) return 1;
+            if (!b.deadline) return -1;
+            return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+          });
+          break;
+        case sortEnum.A_Z:
+          projects.value.sort((a, b) => a.name.localeCompare(b.name));
+          break;
       }
     }
 
@@ -147,21 +273,25 @@ export default {
     }
 
     function toProject(id: number) {
-      $router.push('projetos/' + id.toString());
+      $router.push('projetos/' + toBase64(id.toString()));
+    }
+
+    function toVersions(id: number) {
+      $router.push('projetos/versoes/' + toBase64(id.toString()));
     }
 
     function getRandomColor(): string {
       const pastelColors = [
-        '#FFB3BA', // Pastel Red
-        '#FFDFBA', // Pastel Orange
-        '#FFFFBA', // Pastel Yellow
-        '#BAFFC9', // Pastel Green
+        // '#FFB3BA', // Pastel Red
+        // '#FFDFBA', // Pastel Orange
+        // '#FFFFBA', // Pastel Yellow
+        // '#BAFFC9', // Pastel Green
         '#BAE1FF', // Pastel Blue
-        '#E0BBE4', // Pastel Purple
-        '#FFC0CB', // Pink
-        '#F0E68C', // Khaki
-        '#ADD8E6', // Light Blue
-        '#90EE90', // Light Green
+        // '#E0BBE4', // Pastel Purple
+        // '#FFC0CB', // Pink
+        // '#F0E68C', // Khaki
+        // '#ADD8E6', // Light Blue
+        // '#90EE90', // Light Green
       ];
       const randomIndex = Math.floor(Math.random() * pastelColors.length);
       return pastelColors[randomIndex];
@@ -178,10 +308,19 @@ export default {
       return `${day}/${month}/${year}`;
     }
 
+    function getProjectStatusName(status: ProjectStatus): string {
+      return StatusValues.find((X) => X.id === status).name;
+    }
+
+    function getProjectStatusColor(status: ProjectStatus): string {
+      return StatusValues.find((X) => X.id === status).color;
+    }
+
     onMounted(async () => {
       emitter.on('open-project-dialog', openDialog);
       emitter.on('close-project-dialog', closeDialog);
       await getProjects();
+      filterProjects();
     });
 
     onBeforeUnmount(() => {
@@ -198,6 +337,14 @@ export default {
       getUsernameInitials,
       ProjectStatus,
       toProject,
+      toVersions,
+      statusFilter,
+      statusOptions,
+      sortFilter,
+      sortOptions,
+      filterProjects,
+      getProjectStatusName,
+      getProjectStatusColor,
     };
   },
 };

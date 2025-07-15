@@ -121,3 +121,25 @@ body.body--dark {
 .q-date__calendar-item--fill {
   background: rgba(0, 123, 255, 0.1);
 }
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-label {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.filter-select .q-field__control {
+  background: #252525;
+  color: var(--text-color);
+  border-radius: var(--border-radius);
+  height: 36px;
+}
+
+.filter-select .q-field__native {
+  padding: 8px 12px;
+}

@@ -31,6 +31,18 @@ const routes: RouteRecordRaw[] = [
         name: 'Projeto',
         props: true,
       },
+      {
+        path: 'projetos/versoes/:id',
+        component: () => import('pages/VersionsPage.vue'),
+        name: 'Versões',
+        props: true,
+        meta: {
+          button: true,
+          label: 'Nova Versão',
+          icon: 'mdi-plus',
+          emitt: 'open-version-dialog',
+        },
+      },
     ],
   },
 
