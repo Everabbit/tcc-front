@@ -39,7 +39,7 @@
           >
             <q-input
               label="Inicio da Versão"
-              v-model="formattedStartDate"
+              :model-value="formattedStartDate"
               readonly
               outlined
               mask="##/##/####"
@@ -74,7 +74,7 @@
           >
             <q-input
               label="Prazo da Versão"
-              v-model="formattedEndDate"
+              :model-value="formattedEndDate"
               readonly
               outlined
               mask="##/##/####"
@@ -123,7 +123,7 @@
       <!-- Rodapé -->
       <q-card-actions align="right" class="dialog-footer">
         <q-btn label="Cancelar" color="grey" v-close-popup flat />
-        <q-btn label="Criar Versão" color="primary" type="submit" />
+        <q-btn :label="getButtonName" color="primary" type="submit" />
       </q-card-actions>
     </q-form>
   </q-card>
@@ -137,15 +137,19 @@ import { ResponseI } from 'src/models/response.model';
 import { VersionCreateI } from 'src/models/version.model';
 import VersionService from 'src/services/version.service';
 import emitter from 'src/utils/event_bus';
-import { clone } from 'src/utils/transform';
+import { clone, fromBase64 } from 'src/utils/transform';
 import { required } from 'src/utils/validation';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 export default {
   props: {
     projectId: {
       type: String,
       required: true,
+    },
+    versionId: {
+      type: String,
+      required: false,
     },
   },
   setup(props) {
@@ -181,24 +185,33 @@ export default {
       return formatted;
     });
 
+    const getButtonName = computed<string>(() => {
+      return props.versionId ? 'Atualizar Versão' : 'Criar Versão';
+    });
+
     async function addVersion(): Promise<void> {
       try {
         const isValid: boolean = await form.value.validate();
 
         if (isValid) {
+          $q.loading.show();
           versionCreateData.value.projectId = parseInt(props.projectId);
           const formData: FormData = new FormData();
           formData.append('version', JSON.stringify(versionCreateData.value));
 
-          const response: ResponseI = await VersionService.create(formData);
+          const response: ResponseI = !props.versionId
+            ? await VersionService.create(formData)
+            : await VersionService.update(fromBase64(props.versionId), formData);
 
           if (!response.success) {
             throw Error(response.message);
           }
-
+          $q.loading.hide();
           $q.notify({
             type: 'positive',
-            message: 'Projeto criado com successo!',
+            message: `Versão ${versionCreateData.value.name} ${
+              props.versionId ? 'atualizada' : 'criada'
+            } com successo!`,
           });
 
           //limpar formulário
@@ -211,6 +224,7 @@ export default {
           //fechar popup
           emitter.emit('close-version-dialog');
         } else {
+          $q.loading.hide();
           $q.notify({
             type: 'negative',
             message: 'Corrija os erros no formulário',
@@ -224,6 +238,30 @@ export default {
         });
       }
     }
+
+    async function getVersion(): Promise<void> {
+      try {
+        const parseVersionId = fromBase64(props.versionId);
+        const response: ResponseI = await VersionService.getOne(parseVersionId, props.projectId);
+        if (!response.success) {
+          throw Error(response.message);
+        }
+        versionCreateData.value = response.data;
+      } catch (error) {
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao buscar versão.',
+        });
+      }
+    }
+
+    onMounted(async () => {
+      if (props.versionId) {
+        await getVersion();
+      }
+    });
+
     return {
       versionCreateData,
       required,
@@ -232,6 +270,7 @@ export default {
       form,
       status,
       addVersion,
+      getButtonName,
     };
   },
 };

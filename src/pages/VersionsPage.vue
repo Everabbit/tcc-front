@@ -3,6 +3,7 @@
     <q-dialog persistent v-model="showDialog">
       <CreateVersionDialogComponent
         :project-id="idParse"
+        :version-id="versionEditId"
         v-if="showDialog"
       ></CreateVersionDialogComponent>
     </q-dialog>
@@ -22,6 +23,7 @@
           option-label="value"
           style="min-width: 150px"
           class="filter-select"
+          @update:model-value="filterVersions"
         />
       </div>
 
@@ -39,11 +41,12 @@
           option-label="value"
           style="min-width: 180px"
           class="filter-select"
+          @update:model-value="filterVersions"
         />
       </div>
     </div>
 
-    <div class="versions-grid col-12 col-md-10 col-lg-9">
+    <div v-if="versions && versions.length > 0" class="versions-grid col-12 col-md-10 col-lg-9">
       <!-- Cards de versões -->
       <q-card flat v-for="version in versions" :key="version.id" class="version-card">
         <q-card-section>
@@ -57,7 +60,7 @@
                 :label="getProjectStatusName(version.status)"
               />
             </div>
-            <q-btn flat round dense icon="edit" color="grey-7" />
+            <q-btn flat round dense icon="edit" color="grey-7" @click="openDialog(version.id)" />
           </div>
           <q-separator />
           <div class="q-mt-sm">
@@ -65,6 +68,10 @@
           </div>
 
           <div class="version-meta flex q-gutter-sm q-mb-sm">
+            <div v-if="version.startDate" class="text-caption text-grey">
+              <q-icon name="mdi-calendar" size="16px" class="q-mr-sm" />
+              <span>Inicio: {{ formatDate(version.startDate) }}</span>
+            </div>
             <div v-if="version.endDate" class="text-caption text-grey">
               <q-icon name="mdi-calendar" size="16px" class="q-mr-sm" />
               <span>Prazo: {{ formatDate(version.endDate) }}</span>
@@ -89,13 +96,21 @@
         </q-card-section>
       </q-card>
     </div>
+    <div v-else>
+      <div class="col-12 text-center text-grey-7">
+        <q-icon name="mdi-information-outline" size="50px" />
+        <p class="text-h6">Nenhuma versão encontrada.</p>
+        <p class="text-subtitle1">Parece que não encontramos nenhuma versão para esses filtros.</p>
+        <q-btn color="primary" icon="add" label="Criar Nova Versão" @click="openDialog()" />
+      </div>
+    </div>
   </q-page>
 </template>
 
 <script lang="ts">
 import { useQuasar } from 'quasar';
 import CreateVersionDialogComponent from 'src/components/CreateVersionDialog.component.vue';
-import { filterEnum } from 'src/enums/filter.enum';
+import { filterEnum, filterVersionEnum } from 'src/enums/filter.enum';
 import { sortEnum } from 'src/enums/sort.enum';
 import { VersionStatus, VersionStatusEnum } from 'src/enums/status.enum';
 import { ProjectI } from 'src/models/project.model';
@@ -121,15 +136,21 @@ export default {
     const $router = useRouter();
     const showDialog = ref<boolean>(false);
     const versions = ref<VersionI[]>();
+    const versionsClone = ref<VersionI[]>([]);
     const idParse = ref<string>(fromBase64(props.id));
     const statusValues = clone(VersionStatus);
+    const versionEditId = ref<string>(null);
 
     const statusFilter = ref<number>(1);
-    const statusOptions = ref<{ id: number; value: string }[]>([
-      { id: filterEnum.ALL, value: 'Todos' },
-      { id: filterEnum.ACTIVED, value: 'Ativos' },
-      { id: filterEnum.UNACTIVE, value: 'Inativos' },
-      { id: filterEnum.ARCHIVED, value: 'Arquivados' },
+    const statusOptions = ref<{ id: filterVersionEnum; value: string }[]>([
+      { id: filterVersionEnum.ALL, value: 'Todos' },
+      { id: filterVersionEnum.DRAFT, value: 'Rascunho' },
+      { id: filterVersionEnum.DEVELOPMENT, value: 'Em desenvolvimento' },
+      { id: filterVersionEnum.TESTING, value: 'Em testes' },
+      { id: filterVersionEnum.STAGING, value: 'Preparada pro deploy' },
+      { id: filterVersionEnum.RELEASED, value: 'Lançada' },
+      { id: filterVersionEnum.DEPRECATED, value: 'Depreciada' },
+      { id: filterVersionEnum.ROLLED_BACK, value: 'Revertida' },
     ]);
 
     const sortFilter = ref<number>(1);
@@ -140,13 +161,83 @@ export default {
       { id: sortEnum.A_Z, value: 'Nome (A-Z)' },
     ]);
 
-    function openDialog(): void {
+    function openDialog(id: number | null = null): void {
+      if (id) {
+        versionEditId.value = toBase64(id.toString());
+      } else {
+        versionEditId.value = null;
+      }
       showDialog.value = true;
     }
 
     async function closeDialog(): Promise<void> {
       showDialog.value = false;
       await getVersions();
+    }
+    function filterVersions(): void {
+      versions.value = clone(versionsClone.value);
+      switch (statusFilter.value) {
+        case filterVersionEnum.ALL:
+          versions.value = clone(versionsClone.value);
+          break;
+        case filterVersionEnum.DRAFT:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.DRAFT,
+          );
+          break;
+        case filterVersionEnum.DEVELOPMENT:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.DEVELOPMENT,
+          );
+          break;
+        case filterVersionEnum.TESTING:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.TESTING,
+          );
+          break;
+        case filterVersionEnum.STAGING:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.STAGING,
+          );
+          break;
+        case filterVersionEnum.RELEASED:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.RELEASED,
+          );
+          break;
+        case filterVersionEnum.DEPRECATED:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.DEPRECATED,
+          );
+          break;
+        case filterVersionEnum.ROLLED_BACK:
+          versions.value = versions.value.filter(
+            (project) => project.status === VersionStatusEnum.ROLLED_BACK,
+          );
+          break;
+      }
+      switch (sortFilter.value) {
+        case sortEnum.NEWEST:
+          versions.value.sort(
+            (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+          );
+          break;
+        case sortEnum.OLDEST:
+          versions.value.sort(
+            (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+          );
+          break;
+        case sortEnum.DATE_LIMIT:
+          versions.value.sort((a, b) => {
+            if (!a.endDate) return 1;
+            if (!b.endDate) return -1;
+            return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
+          });
+          break;
+        case sortEnum.A_Z:
+          versions.value.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+      }
     }
 
     async function getVersions(): Promise<void> {
@@ -158,6 +249,7 @@ export default {
         }
         $q.loading.hide();
         versions.value = response.data;
+        versionsClone.value = response.data;
       } catch (error) {
         $q.loading.hide();
         console.error('Erro:', error);
@@ -191,6 +283,7 @@ export default {
       emitter.on('open-version-dialog', openDialog);
       emitter.on('close-version-dialog', closeDialog);
       await getVersions();
+      filterVersions();
     });
 
     onBeforeUnmount(() => {
@@ -211,6 +304,8 @@ export default {
       getProjectStatusName,
       getProjectStatusColor,
       formatDate,
+      filterVersions,
+      versionEditId,
     };
   },
 };

@@ -1,7 +1,11 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md">
     <q-dialog persistent v-model="showDialogVersion">
-      <CreateVersionDialog :project-id="idParse" v-if="showDialogVersion"></CreateVersionDialog>
+      <CreateVersionDialog
+        :project-id="idParse"
+        :version-id="versionEditId"
+        v-if="showDialogVersion"
+      ></CreateVersionDialog>
     </q-dialog>
     <q-dialog persistent v-model="showDialogMembers">
       <AddMemberDialogCompoent
@@ -210,7 +214,7 @@
         <q-card-section>
           <div class="row items-center justify-between q-mb-sm">
             <div class="text-h6">Versões</div>
-            <q-btn color="primary" icon="add" label="Nova Versão" flat @click="createVersion" />
+            <q-btn color="primary" icon="add" label="Nova Versão" flat @click="createVersion()" />
           </div>
           <q-separator />
 
@@ -225,19 +229,22 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="versao in project.versions" :key="versao.id">
+              <tr v-for="version in project.versions" :key="version.id">
                 <td>
-                  <div class="text-center">{{ versao.name }}</div>
+                  <div class="text-center">{{ version.name }}</div>
                 </td>
                 <td>
                   <div class="text-center">
-                    <q-badge color="blue">{{
-                      versionStatus.find((status) => status.id === versao.status).name
-                    }}</q-badge>
+                    <q-badge
+                      :color="versionStatus.find((status) => status.id === version.status).color"
+                      >{{
+                        versionStatus.find((status) => status.id === version.status).name
+                      }}</q-badge
+                    >
                   </div>
                 </td>
                 <td>
-                  <div class="text-center">{{ formatDate(versao.startDate) }}</div>
+                  <div class="text-center">{{ formatDate(version.startDate) }}</div>
                 </td>
                 <td>
                   <div class="text-center">
@@ -246,7 +253,7 @@
                   <q-linear-progress :value="0 / 100" color="accent" />
                 </td>
                 <td class="text-right">
-                  <q-btn flat dense icon="edit" />
+                  <q-btn flat dense icon="edit" @click="createVersion(version.id)" />
                   <q-btn flat dense icon="delete" />
                 </td>
               </tr>
@@ -300,7 +307,7 @@ import { ProjectI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import emitter from 'src/utils/event_bus';
-import { clone, fromBase64 } from 'src/utils/transform';
+import { clone, fromBase64, toBase64 } from 'src/utils/transform';
 import { required } from 'src/utils/validation';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { ref } from 'vue';
@@ -335,6 +342,7 @@ export default {
     const form = ref<QForm>(null);
     const bannerFile = ref<File>(null);
     const idParse = ref<string>(fromBase64(props.id));
+    const versionEditId = ref<string>(null);
 
     async function getProject(): Promise<void> {
       try {
@@ -510,7 +518,12 @@ export default {
       }
     }
 
-    async function createVersion(): Promise<void> {
+    async function createVersion(id: number | null = null): Promise<void> {
+      if (id) {
+        versionEditId.value = toBase64(id.toString());
+      } else {
+        versionEditId.value = null;
+      }
       showDialogVersion.value = !showDialogVersion.value;
       if (showDialogVersion.value === false) {
         await getProject();
@@ -596,6 +609,7 @@ export default {
       handleBannerDelete,
       deleteProject,
       idParse,
+      versionEditId,
     };
   },
 };
