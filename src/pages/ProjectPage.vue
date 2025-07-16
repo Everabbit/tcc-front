@@ -214,7 +214,22 @@
         <q-card-section>
           <div class="row items-center justify-between q-mb-sm">
             <div class="text-h6">Versões</div>
-            <q-btn color="primary" icon="add" label="Nova Versão" flat @click="createVersion()" />
+            <div>
+              <q-btn
+                color="primary"
+                icon="mdi-diversify"
+                label="Ver versões"
+                flat
+                @click="toVersions(project.id)"
+              />
+              <q-btn
+                color="primary"
+                icon="mdi-plus"
+                label="Nova Versão"
+                flat
+                @click="createVersion()"
+              />
+            </div>
           </div>
           <q-separator />
 
@@ -253,8 +268,8 @@
                   <q-linear-progress :value="0 / 100" color="accent" />
                 </td>
                 <td class="text-right">
-                  <q-btn flat dense icon="edit" @click="createVersion(version.id)" />
-                  <q-btn flat dense icon="delete" />
+                  <q-btn flat dense icon="mdi-pencil" @click="createVersion(version.id)" />
+                  <q-btn flat dense icon="mdi-delete" @click="removeVersion(version.id)" />
                 </td>
               </tr>
             </tbody>
@@ -306,6 +321,7 @@ import { VersionStatus } from 'src/enums/status.enum';
 import { ProjectI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
+import VersionService from 'src/services/version.service';
 import emitter from 'src/utils/event_bus';
 import { clone, fromBase64, toBase64 } from 'src/utils/transform';
 import { required } from 'src/utils/validation';
@@ -529,6 +545,46 @@ export default {
         await getProject();
       }
     }
+    function toVersions(id: number) {
+      $router.push('/p/projetos/versoes/' + toBase64(id.toString()));
+    }
+    async function removeVersion(id: number): Promise<void> {
+      $q.dialog({
+        title: 'Confirmar Remoção',
+        message: 'Tem certeza de que deseja remover permanentemente esta versão?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'red',
+        },
+        persistent: false,
+      }).onOk(async () => {
+        try {
+          $q.loading.show();
+          const response: ResponseI = await VersionService.delete(id.toString());
+          if (!response.success) {
+            throw Error(response.message);
+          }
+          $q.loading.hide();
+          $q.notify({
+            type: 'positive',
+            message: 'Versão removida com sucesso!',
+          });
+          await getProject();
+        } catch (error) {
+          $q.loading.hide();
+          console.error('Erro ao remover versão:', error.message);
+          $q.notify({
+            type: 'negative',
+            message: error.message || 'Ocorreu um erro ao remover a versão',
+          });
+        }
+      });
+    }
     async function addmembersDialog(): Promise<void> {
       showDialogMembers.value = !showDialogMembers.value;
       if (showDialogMembers.value === false) {
@@ -610,6 +666,8 @@ export default {
       deleteProject,
       idParse,
       versionEditId,
+      toVersions,
+      removeVersion,
     };
   },
 };

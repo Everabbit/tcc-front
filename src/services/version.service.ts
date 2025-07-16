@@ -50,6 +50,28 @@ export default class VersionService {
     }
   }
 
+  static async delete(id: string): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/versions/remove/${id}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async getAll(projectId: string): Promise<ResponseI> {
     try {
       if (!projectId) {

@@ -60,7 +60,24 @@
                 :label="getProjectStatusName(version.status)"
               />
             </div>
-            <q-btn flat round dense icon="edit" color="grey-7" @click="openDialog(version.id)" />
+            <div>
+              <q-btn
+                flat
+                round
+                dense
+                icon="mdi-pencil"
+                color="grey-7"
+                @click="openDialog(version.id)"
+              />
+              <q-btn
+                flat
+                round
+                dense
+                icon="mdi-delete"
+                color="grey-7"
+                @click="removeVersion(version.id)"
+              />
+            </div>
           </div>
           <q-separator />
           <div class="q-mt-sm">
@@ -260,6 +277,44 @@ export default {
       }
     }
 
+    async function removeVersion(id: number): Promise<void> {
+      $q.dialog({
+        title: 'Confirmar Remoção',
+        message: 'Tem certeza de que deseja remover permanentemente esta versão?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'red',
+        },
+        persistent: false,
+      }).onOk(async () => {
+        try {
+          $q.loading.show();
+          const response: ResponseI = await VersionService.delete(id.toString());
+          if (!response.success) {
+            throw Error(response.message);
+          }
+          $q.loading.hide();
+          $q.notify({
+            type: 'positive',
+            message: 'Versão removida com sucesso!',
+          });
+          await getVersions();
+        } catch (error) {
+          $q.loading.hide();
+          console.error('Erro ao remover versão:', error.message);
+          $q.notify({
+            type: 'negative',
+            message: error.message || 'Ocorreu um erro ao remover a versão',
+          });
+        }
+      });
+    }
+
     function formatDate(date: Date): string {
       if (!date) {
         return '';
@@ -306,6 +361,7 @@ export default {
       formatDate,
       filterVersions,
       versionEditId,
+      removeVersion,
     };
   },
 };
