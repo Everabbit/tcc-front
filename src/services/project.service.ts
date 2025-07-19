@@ -2,6 +2,7 @@ import { AxiosResponse } from 'axios';
 import { ProjectCreateI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import api from './api';
+import { TagI } from 'src/models/tag.model';
 
 export default class ProjectService {
   static async create(project: FormData): Promise<ResponseI> {
@@ -158,6 +159,69 @@ export default class ProjectService {
       }
       console.log(`/projects/removeuser/${id}/${memberId}`);
       const response: AxiosResponse = await api.delete(`/projects/removeuser/${id}/${memberId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async addTag(tag: TagI): Promise<ResponseI> {
+    try {
+      if (!tag) {
+        throw Error('Informe tags válidas!');
+      }
+
+      const response: AxiosResponse = await api.post(`/projects/createtag`, tag);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async removeTag(tagId: number): Promise<ResponseI> {
+    try {
+      if (!tagId) {
+        throw Error('Informe tags válidas!');
+      }
+      const response: AxiosResponse = await api.delete(`/projects/deletetag/${tagId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+  static async updateTag(tagId: number, tags: FormData): Promise<ResponseI> {
+    try {
+      if (!tagId) {
+        throw Error('Informe tags válidas!');
+      }
+      const response: AxiosResponse = await api.put(`/projects/updatetag}`, tags);
 
       if (response.status === 200) {
         return response.data;

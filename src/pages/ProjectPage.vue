@@ -2,6 +2,7 @@
   <q-page class="row justify-center items-start q-pa-md">
     <q-dialog persistent v-model="showDialogVersion">
       <CreateVersionDialog
+        @close="createVersion"
         :project-id="idParse"
         :version-id="versionEditId"
         v-if="showDialogVersion"
@@ -9,9 +10,17 @@
     </q-dialog>
     <q-dialog persistent v-model="showDialogMembers">
       <AddMemberDialogCompoent
+        @close="addmembersDialog"
         :project-id="idParse"
         v-if="showDialogMembers"
       ></AddMemberDialogCompoent>
+    </q-dialog>
+    <q-dialog persistent v-model="showDialogTags">
+      <AddTagDialogComponent
+        @close="addTagDialog"
+        :project-id="idParse"
+        v-if="showDialogTags"
+      ></AddTagDialogComponent>
     </q-dialog>
     <div class="col-12 col-md-10 col-lg-9 q-mb-md">
       <div class="q-mb-md">
@@ -159,6 +168,48 @@
               />
             </div>
           </q-form>
+        </q-card-section>
+      </q-card>
+
+      <!-- Tags -->
+
+      <q-card class="q-mb-md card-project">
+        <q-card-section>
+          <div class="row items-center justify-between q-mb-sm">
+            <div class="text-h6 q-mb-sm">Etiquetas</div>
+            <q-btn
+              color="primary"
+              icon="add"
+              label="Adicionar Etiqueta"
+              flat
+              @click="addTagDialog"
+            />
+          </div>
+
+          <q-separator />
+
+          <!-- lista de badges quadradas com dois icones, um de edição e um de remoção, para listar as tags com os nomes e cores -->
+
+          <div class="q-mt-md">
+            <q-chip
+              v-for="(tag, index) in project.tags"
+              :key="index"
+              removable
+              :style="{ 'background-color': tag.color, color: getContrastColor(tag.color) }"
+              size="md"
+              class="q-mr-sm q-mb-sm"
+            >
+              {{ tag.name }}
+              <q-btn
+                flat
+                dense
+                icon="mdi-pencil"
+                class="q-ml-sm"
+                size="sm"
+                @click="editTag(tag.id)"
+              />
+            </q-chip>
+          </div>
         </q-card-section>
       </q-card>
 
@@ -314,6 +365,7 @@
 <script lang="ts">
 import { QForm, useQuasar } from 'quasar';
 import AddMemberDialogCompoent from 'src/components/AddMemberDialog.compoent.vue';
+import AddTagDialogComponent from 'src/components/AddTagDialog.component.vue';
 import CreateVersionDialog from 'src/components/CreateVersionDialog.component.vue';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesValues } from 'src/enums/roles.enum';
@@ -324,6 +376,7 @@ import ProjectService from 'src/services/project.service';
 import VersionService from 'src/services/version.service';
 import emitter from 'src/utils/event_bus';
 import { clone, fromBase64, toBase64 } from 'src/utils/transform';
+import { getContrastColor } from 'src/utils/utils';
 import { required } from 'src/utils/validation';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { ref } from 'vue';
@@ -333,6 +386,7 @@ export default {
   components: {
     CreateVersionDialog,
     AddMemberDialogCompoent,
+    AddTagDialogComponent,
   },
   props: {
     id: {
@@ -352,6 +406,7 @@ export default {
     const roles = clone(RolesValues);
     const showDialogVersion = ref<boolean>(false);
     const showDialogMembers = ref<boolean>(false);
+    const showDialogTags = ref<boolean>(false);
     const versionStatus = clone(VersionStatus);
     const deadline = ref<string>(null);
     const status = clone(ProjectStatusValues);
@@ -591,7 +646,12 @@ export default {
         await getProject();
       }
     }
-
+    async function addTagDialog(): Promise<void> {
+      showDialogTags.value = !showDialogTags.value;
+      if (showDialogTags.value === false) {
+        await getProject();
+      }
+    }
     function removeMember(index: number): void {
       let member: string = project.value.participation.find((member) => member.userId === index)
         .user.username;
@@ -633,14 +693,7 @@ export default {
     }
 
     onMounted(async () => {
-      emitter.on('close-version-dialog', createVersion);
-      emitter.on('close-members-dialog', addmembersDialog);
       await getProject();
-    });
-
-    onBeforeUnmount(() => {
-      emitter.off('close-version-dialog', createVersion);
-      emitter.off('close-members-dialog', addmembersDialog);
     });
 
     return {
@@ -668,6 +721,9 @@ export default {
       versionEditId,
       toVersions,
       removeVersion,
+      showDialogTags,
+      addTagDialog,
+      getContrastColor,
     };
   },
 };

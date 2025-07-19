@@ -256,7 +256,7 @@ export default {
           };
 
           //fechar popup
-          emitter.emit('close-project-dialog');
+          emitter.emit('close');
         } else {
           $q.notify({
             type: 'negative',

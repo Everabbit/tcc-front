@@ -2,6 +2,7 @@
   <q-page class="row justify-center items-start q-pa-md" style="min-height: 0px">
     <q-dialog persistent v-model="showDialog">
       <CreateVersionDialogComponent
+        @close="closeDialog"
         :project-id="idParse"
         :version-id="versionEditId"
         v-if="showDialog"
@@ -9,6 +10,8 @@
     </q-dialog>
 
     <div class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm">
+      <!-- Botão de voltar -->
+      <q-btn flat round icon="arrow_back" @click="$router.back()" />
       <!-- Filtro de Status -->
       <div class="filter-group">
         <span class="filter-label">Status:</span>
@@ -48,7 +51,13 @@
 
     <div v-if="versions && versions.length > 0" class="versions-grid col-12 col-md-10 col-lg-9">
       <!-- Cards de versões -->
-      <q-card flat v-for="version in versions" :key="version.id" class="version-card">
+      <q-card
+        flat
+        v-for="version in versions"
+        :key="version.id"
+        class="version-card"
+        @click="gotToTasks(version.id)"
+      >
         <q-card-section>
           <div class="version-header">
             <div class="flex items-center q-gutter-sm">
@@ -67,7 +76,7 @@
                 dense
                 icon="mdi-pencil"
                 color="grey-7"
-                @click="openDialog(version.id)"
+                @click.stop="openDialog(version.id)"
               />
               <q-btn
                 flat
@@ -75,7 +84,7 @@
                 dense
                 icon="mdi-delete"
                 color="grey-7"
-                @click="removeVersion(version.id)"
+                @click.stop="removeVersion(version.id)"
               />
             </div>
           </div>
@@ -277,6 +286,10 @@ export default {
       }
     }
 
+    function gotToTasks(id: number) {
+      $router.push(`/p/projetos/versoes/tarefas/${toBase64(id.toString())}`);
+    }
+
     async function removeVersion(id: number): Promise<void> {
       $q.dialog({
         title: 'Confirmar Remoção',
@@ -362,6 +375,8 @@ export default {
       filterVersions,
       versionEditId,
       removeVersion,
+      gotToTasks,
+      closeDialog,
     };
   },
 };

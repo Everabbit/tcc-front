@@ -222,7 +222,7 @@ export default {
           };
 
           //fechar popup
-          emitter.emit('close-version-dialog');
+          emitter.emit('close');
         } else {
           $q.loading.hide();
           $q.notify({

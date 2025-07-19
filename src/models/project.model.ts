@@ -2,6 +2,7 @@ import { ProjectStatus } from 'src/enums/project_status.enum';
 import { RolesEnum } from 'src/enums/roles.enum';
 import { UserI } from './user.model';
 import { VersionI } from './version.model';
+import { TagI } from './tag.model';
 
 export interface ProjectI {
   id?: number;
@@ -16,6 +17,7 @@ export interface ProjectI {
   createdAt?: Date;
   updatedAt?: Date;
   versions?: VersionI[];
+  tags?: TagI[];
 }
 
 export interface ProjectParticipationI {

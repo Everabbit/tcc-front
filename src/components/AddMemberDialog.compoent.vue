@@ -167,7 +167,7 @@ export default {
           };
 
           //fechar popup
-          emitter.emit('close-members-dialog');
+          emitter.emit('close');
         } else {
           $q.notify({
             type: 'negative',

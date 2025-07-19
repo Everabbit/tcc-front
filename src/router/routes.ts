@@ -43,6 +43,12 @@ const routes: RouteRecordRaw[] = [
           emitt: 'open-version-dialog',
         },
       },
+      {
+        path: 'projetos/versoes/tarefas/:id',
+        component: () => import('pages/TasksPage.vue'),
+        name: 'Tarefas',
+        props: true,
+      },
     ],
   },
 
