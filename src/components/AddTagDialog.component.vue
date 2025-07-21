@@ -50,11 +50,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, PropType, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { TagI } from 'src/models/tag.model';
 import ProjectService from 'src/services/project.service';
 import { getContrastColor } from 'src/utils/utils';
+import { ResponseI } from 'src/models/response.model';
 
 export default defineComponent({
   name: 'AddTagDialogComponent',
@@ -63,19 +64,35 @@ export default defineComponent({
       type: String,
       required: true,
     },
+    tag: {
+      type: Object as PropType<TagI>,
+      required: false,
+    },
   },
   setup(props, { emit }) {
     const $q = useQuasar();
-    const newTag = ref<TagI>({
-      projectId: parseInt(props.projectId),
-      name: '',
-      color: '',
-    });
+    const newTag = ref<TagI>(null);
+
+    if (props.tag) {
+      newTag.value = props.tag;
+    } else {
+      newTag.value = {
+        projectId: parseInt(props.projectId),
+        name: '',
+        color: '',
+      };
+    }
 
     async function saveTag(): Promise<void> {
       try {
         $q.loading.show();
-        const response = await ProjectService.addTag(newTag.value);
+        let response: ResponseI = null;
+        if (newTag.value.id) {
+          response = await ProjectService.updateTag(newTag.value);
+        } else {
+          response = await ProjectService.addTag(newTag.value);
+        }
+
         if (!response.success) {
           throw Error(response.message);
         }

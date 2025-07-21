@@ -177,7 +177,7 @@ export default class ProjectService {
   static async addTag(tag: TagI): Promise<ResponseI> {
     try {
       if (!tag) {
-        throw Error('Informe tags válidas!');
+        throw Error('Informe uma etiqueta válida!');
       }
 
       const response: AxiosResponse = await api.post(`/projects/createtag`, tag);
@@ -199,7 +199,7 @@ export default class ProjectService {
   static async removeTag(tagId: number): Promise<ResponseI> {
     try {
       if (!tagId) {
-        throw Error('Informe tags válidas!');
+        throw Error('Informe uma etiqueta válida!');
       }
       const response: AxiosResponse = await api.delete(`/projects/deletetag/${tagId}`);
 
@@ -216,12 +216,12 @@ export default class ProjectService {
       return response;
     }
   }
-  static async updateTag(tagId: number, tags: FormData): Promise<ResponseI> {
+  static async updateTag(tag: TagI): Promise<ResponseI> {
     try {
-      if (!tagId) {
-        throw Error('Informe tags válidas!');
+      if (!tag) {
+        throw Error('Informe uma etiqueta válida!');
       }
-      const response: AxiosResponse = await api.put(`/projects/updatetag}`, tags);
+      const response: AxiosResponse = await api.put(`/projects/updatetag`, tag);
 
       if (response.status === 200) {
         return response.data;

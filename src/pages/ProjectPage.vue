@@ -19,6 +19,7 @@
       <AddTagDialogComponent
         @close="addTagDialog"
         :project-id="idParse"
+        :tag="actuallyTag"
         v-if="showDialogTags"
       ></AddTagDialogComponent>
     </q-dialog>
@@ -182,19 +183,17 @@
               icon="add"
               label="Adicionar Etiqueta"
               flat
-              @click="addTagDialog"
+              @click="addTagDialog()"
             />
           </div>
 
           <q-separator />
-
-          <!-- lista de badges quadradas com dois icones, um de edição e um de remoção, para listar as tags com os nomes e cores -->
-
           <div class="q-mt-md">
             <q-chip
               v-for="(tag, index) in project.tags"
               :key="index"
               removable
+              @remove="removeTag(tag.id)"
               :style="{ 'background-color': tag.color, color: getContrastColor(tag.color) }"
               size="md"
               class="q-mr-sm q-mb-sm"
@@ -206,7 +205,7 @@
                 icon="mdi-pencil"
                 class="q-ml-sm"
                 size="sm"
-                @click="editTag(tag.id)"
+                @click="addTagDialog(tag)"
               />
             </q-chip>
           </div>
@@ -295,7 +294,12 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="version in project.versions" :key="version.id">
+              <tr
+                v-for="version in project.versions"
+                :key="version.id"
+                v-on:click="gotToTasks(version.id)"
+                style="cursor: pointer"
+              >
                 <td>
                   <div class="text-center">{{ version.name }}</div>
                 </td>
@@ -372,6 +376,7 @@ import { RolesValues } from 'src/enums/roles.enum';
 import { VersionStatus } from 'src/enums/status.enum';
 import { ProjectI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
+import { TagI } from 'src/models/tag.model';
 import ProjectService from 'src/services/project.service';
 import VersionService from 'src/services/version.service';
 import emitter from 'src/utils/event_bus';
@@ -414,6 +419,7 @@ export default {
     const bannerFile = ref<File>(null);
     const idParse = ref<string>(fromBase64(props.id));
     const versionEditId = ref<string>(null);
+    const actuallyTag = ref<TagI>(null);
 
     async function getProject(): Promise<void> {
       try {
@@ -646,12 +652,60 @@ export default {
         await getProject();
       }
     }
-    async function addTagDialog(): Promise<void> {
+    async function addTagDialog(tag: TagI = null): Promise<void> {
       showDialogTags.value = !showDialogTags.value;
       if (showDialogTags.value === false) {
         await getProject();
+      } else {
+        if (tag) {
+          actuallyTag.value = clone(tag);
+        } else {
+          actuallyTag.value = null;
+        }
       }
     }
+    async function removeTag(tagId: number): Promise<void> {
+      $q.dialog({
+        title: 'Confirmar Remoção',
+        message: 'Tem certeza de que deseja remover permanentemente esta etiqueta?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'red',
+        },
+        persistent: false,
+      }).onOk(async () => {
+        try {
+          $q.loading.show();
+          const response: ResponseI = await ProjectService.removeTag(tagId);
+          if (!response.success) {
+            throw Error(response.message);
+          }
+          $q.loading.hide();
+          $q.notify({
+            type: 'positive',
+            message: 'Etiqueta removida com sucesso!',
+          });
+          await getProject();
+        } catch (error) {
+          $q.loading.hide();
+          console.error('Erro ao remover etiqueta:', error.message);
+          $q.notify({
+            type: 'negative',
+            message: error.message || 'Ocorreu um erro ao remover a etiqueta',
+          });
+        }
+      });
+    }
+
+    function gotToTasks(id: number) {
+      $router.push(`/p/projetos/versoes/tarefas/${toBase64(id.toString())}`);
+    }
+
     function removeMember(index: number): void {
       let member: string = project.value.participation.find((member) => member.userId === index)
         .user.username;
@@ -724,6 +778,9 @@ export default {
       showDialogTags,
       addTagDialog,
       getContrastColor,
+      removeTag,
+      actuallyTag,
+      gotToTasks,
     };
   },
 };
