@@ -54,3 +54,36 @@ export const VersionStatus = [
     color: 'negative',
   },
 ];
+
+export const TaskStatus = [
+  {
+    id: TaskStatusEnum.PENDING,
+    name: 'Pendente',
+    color: 'grey-6',
+  },
+  {
+    id: TaskStatusEnum.IN_PROGRESS,
+    name: 'Em progresso',
+    color: 'blue',
+  },
+  {
+    id: TaskStatusEnum.BLOCKED,
+    name: 'Bloqueada',
+    color: 'negative',
+  },
+  {
+    id: TaskStatusEnum.REVIEW,
+    name: 'Em revisão',
+    color: 'amber',
+  },
+  {
+    id: TaskStatusEnum.DONE,
+    name: 'Concluída',
+    color: 'positive',
+  },
+  {
+    id: TaskStatusEnum.CANCELED,
+    name: 'Cancelada',
+    color: 'grey-8',
+  },
+];

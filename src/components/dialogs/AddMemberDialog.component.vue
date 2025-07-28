@@ -84,7 +84,7 @@ import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { ProjectMemberI } from 'src/models/project.model';
 import { clone } from 'src/utils/transform';
 import { onMounted, ref } from 'vue';
-import { required, validateSelect } from '../utils/validation';
+import { required, validateSelect } from '../../utils/validation';
 import { QForm, useQuasar } from 'quasar';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';

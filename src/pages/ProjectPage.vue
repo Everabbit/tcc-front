@@ -368,9 +368,9 @@
 
 <script lang="ts">
 import { QForm, useQuasar } from 'quasar';
-import AddMemberDialogCompoent from 'src/components/AddMemberDialog.compoent.vue';
-import AddTagDialogComponent from 'src/components/AddTagDialog.component.vue';
-import CreateVersionDialog from 'src/components/CreateVersionDialog.component.vue';
+import AddMemberDialogCompoent from 'src/components/dialogs/AddMemberDialog.component.vue';
+import AddTagDialogComponent from 'src/components/dialogs/AddTagDialog.component.vue';
+import CreateVersionDialog from 'src/components/dialogs/CreateVersionDialog.component.vue';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesValues } from 'src/enums/roles.enum';
 import { VersionStatus } from 'src/enums/status.enum';

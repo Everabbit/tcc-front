@@ -151,7 +151,7 @@ import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { ProjectCreateI, ProjectMemberI } from 'src/models/project.model';
 import { clone, fileToBase64, toBase64 } from 'src/utils/transform';
 import { computed, onMounted, ref } from 'vue';
-import { required, validateEmail, validateSelect } from '../utils/validation';
+import { required, validateEmail, validateSelect } from '../../utils/validation';
 import { QForm, useQuasar } from 'quasar';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
@@ -337,9 +337,9 @@ export default {
 .dialog-card {
   width: 100%;
   max-width: 800px;
-  min-width: 0; /* Remove a largura mínima fixa */
+  min-width: 0;
   color: var(--text-color);
-  box-sizing: border-box; /* Garante que padding não aumente a largura */
+  box-sizing: border-box;
 }
 
 .dialog-header {
@@ -348,23 +348,22 @@ export default {
   align-items: center;
   border-bottom: 1px solid #333;
   padding: 15px 20px;
-  flex-wrap: wrap; /* Permite que os itens quebrem linha em telas pequenas */
+  flex-wrap: wrap;
 }
 
 .dialog-content {
   padding: 20px;
-  overflow: auto; /* Adiciona scroll se o conteúdo for muito grande */
+  overflow: auto;
 }
 
 .dialog-footer {
   border-top: 1px solid #333;
   padding: 15px 20px;
   display: flex;
-  flex-wrap: wrap; /* Para botões se ajustarem em telas pequenas */
-  gap: 10px; /* Espaçamento entre itens do footer */
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-/* Media Queries para ajustes em diferentes tamanhos de tela */
 @media (max-width: 768px) {
   .dialog-header,
   .dialog-content,

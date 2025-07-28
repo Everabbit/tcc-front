@@ -9,10 +9,12 @@
       ></CreateVersionDialogComponent>
     </q-dialog>
 
-    <div class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm">
+    <div
+      class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm flex items-center justify-between"
+    >
       <!-- Botão de voltar -->
       <q-btn flat round icon="arrow_back" @click="$router.back()" />
-      <!-- Filtro de Status -->
+      <!-- Filtro -->
       <div class="filter-group">
         <span class="filter-label">Status:</span>
         <q-select
@@ -26,12 +28,7 @@
           option-label="value"
           style="min-width: 150px"
           class="filter-select"
-          @update:model-value="filterVersions"
         />
-      </div>
-
-      <!-- Filtro de Ordenação -->
-      <div class="filter-group">
         <span class="filter-label">Ordenar por:</span>
         <q-select
           dense
@@ -44,16 +41,18 @@
           option-label="value"
           style="min-width: 180px"
           class="filter-select"
-          @update:model-value="filterVersions"
         />
       </div>
     </div>
 
-    <div v-if="versions && versions.length > 0" class="versions-grid col-12 col-md-10 col-lg-9">
+    <div
+      v-if="versionsFiltered && versionsFiltered.length > 0"
+      class="versions-grid col-12 col-md-10 col-lg-9"
+    >
       <!-- Cards de versões -->
       <q-card
         flat
-        v-for="version in versions"
+        v-for="version in versionsFiltered"
         :key="version.id"
         class="version-card"
         @click="gotToTasks(version.id)"
@@ -135,7 +134,7 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar';
-import CreateVersionDialogComponent from 'src/components/CreateVersionDialog.component.vue';
+import CreateVersionDialogComponent from 'src/components/dialogs/CreateVersionDialog.component.vue';
 import { filterEnum, filterVersionEnum } from 'src/enums/filter.enum';
 import { sortEnum } from 'src/enums/sort.enum';
 import { VersionStatus, VersionStatusEnum } from 'src/enums/status.enum';
@@ -146,7 +145,7 @@ import ProjectService from 'src/services/project.service';
 import VersionService from 'src/services/version.service';
 import emitter from 'src/utils/event_bus';
 import { clone, fromBase64, toBase64 } from 'src/utils/transform';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 export default {
@@ -162,7 +161,6 @@ export default {
     const $router = useRouter();
     const showDialog = ref<boolean>(false);
     const versions = ref<VersionI[]>();
-    const versionsClone = ref<VersionI[]>([]);
     const idParse = ref<string>(fromBase64(props.id));
     const statusValues = clone(VersionStatus);
     const versionEditId = ref<string>(null);
@@ -200,71 +198,60 @@ export default {
       showDialog.value = false;
       await getVersions();
     }
-    function filterVersions(): void {
-      versions.value = clone(versionsClone.value);
+
+    const versionsFiltered = computed(() => {
+      if (!versions.value) {
+        return [];
+      }
+
+      let filtered = clone(versions.value);
       switch (statusFilter.value) {
         case filterVersionEnum.ALL:
-          versions.value = clone(versionsClone.value);
           break;
         case filterVersionEnum.DRAFT:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.DRAFT,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.DRAFT);
           break;
         case filterVersionEnum.DEVELOPMENT:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.DEVELOPMENT,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.DEVELOPMENT);
           break;
         case filterVersionEnum.TESTING:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.TESTING,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.TESTING);
           break;
         case filterVersionEnum.STAGING:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.STAGING,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.STAGING);
           break;
         case filterVersionEnum.RELEASED:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.RELEASED,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.RELEASED);
           break;
         case filterVersionEnum.DEPRECATED:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.DEPRECATED,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.DEPRECATED);
           break;
         case filterVersionEnum.ROLLED_BACK:
-          versions.value = versions.value.filter(
-            (project) => project.status === VersionStatusEnum.ROLLED_BACK,
-          );
+          filtered = filtered.filter((version) => version.status === VersionStatusEnum.ROLLED_BACK);
           break;
       }
+
       switch (sortFilter.value) {
         case sortEnum.NEWEST:
-          versions.value.sort(
+          filtered.sort(
             (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
           );
           break;
         case sortEnum.OLDEST:
-          versions.value.sort(
+          filtered.sort(
             (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
           );
           break;
         case sortEnum.DATE_LIMIT:
-          versions.value.sort((a, b) => {
+          filtered.sort((a, b) => {
             if (!a.endDate) return 1;
             if (!b.endDate) return -1;
             return new Date(a.endDate).getTime() - new Date(b.endDate).getTime();
           });
           break;
-        case sortEnum.A_Z:
-          versions.value.sort((a, b) => a.name.localeCompare(b.name));
-          break;
       }
-    }
+      return filtered;
+    });
 
     async function getVersions(): Promise<void> {
       try {
@@ -275,19 +262,18 @@ export default {
         }
         $q.loading.hide();
         versions.value = response.data;
-        versionsClone.value = response.data;
       } catch (error) {
         $q.loading.hide();
         console.error('Erro:', error);
         $q.notify({
           type: 'negative',
-          message: error.message || 'Ocorreu um erro ao buscar projetos.',
+          message: error.message || 'Ocorreu um erro ao buscar versões.',
         });
       }
     }
 
     function gotToTasks(id: number) {
-      $router.push(`/p/projetos/versoes/tarefas/${toBase64(id.toString())}`);
+      $router.push(`/p/projetos/versoes/tarefas/${props.id}/${toBase64(id.toString())}`);
     }
 
     async function removeVersion(id: number): Promise<void> {
@@ -351,7 +337,6 @@ export default {
       emitter.on('open-version-dialog', openDialog);
       emitter.on('close-version-dialog', closeDialog);
       await getVersions();
-      filterVersions();
     });
 
     onBeforeUnmount(() => {
@@ -361,7 +346,6 @@ export default {
 
     return {
       showDialog,
-      versions,
       getVersions,
       openDialog,
       statusFilter,
@@ -372,11 +356,11 @@ export default {
       getProjectStatusName,
       getProjectStatusColor,
       formatDate,
-      filterVersions,
       versionEditId,
       removeVersion,
       gotToTasks,
       closeDialog,
+      versionsFiltered,
     };
   },
 };
@@ -410,10 +394,13 @@ export default {
   color: #aaa;
   font-size: 0.9rem;
   margin-bottom: 15px;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  height: 2.8em;
 }
 
 .version-progress {

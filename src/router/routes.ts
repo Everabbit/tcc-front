@@ -44,7 +44,7 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'projetos/versoes/tarefas/:id',
+        path: 'projetos/versoes/tarefas/:projectId/:versionId',
         component: () => import('pages/TasksPage.vue'),
         name: 'Tarefas',
         props: true,
