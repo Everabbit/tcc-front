@@ -80,8 +80,10 @@
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { ProjectI } from 'src/models/project.model';
 import { clone, toBase64 } from 'src/utils/transform';
+import { formatDate } from 'src/utils/utils';
 import { PropType } from 'vue';
 import { useRouter } from 'vue-router';
+import { getUsernameInitials } from 'src/utils/utils';
 
 export default {
   props: {
@@ -126,26 +128,6 @@ export default {
       return StatusValues.find((X) => X.id === status).color;
     }
 
-    function formatDate(date: Date): string {
-      if (!date) {
-        return '';
-      }
-      const newDate = new Date(date.toString());
-      const day = newDate.getDate().toString().padStart(2, '0');
-      const month = (newDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = newDate.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-
-    function getUsernameInitials(username: string): string {
-      if (!username) return '';
-      const names = username.split(' ');
-      if (names.length === 1) {
-        return names[0].substring(0, 2).toUpperCase();
-      } else {
-        return names[0].charAt(0).toUpperCase() + names[names.length - 1].charAt(0).toUpperCase();
-      }
-    }
     return {
       toVersions,
       toProject,

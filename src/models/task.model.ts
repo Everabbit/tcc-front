@@ -2,6 +2,9 @@ import { PriorityEnum } from 'src/enums/task_priority.enum';
 import { UserI } from './user.model';
 import { VersionI } from './version.model';
 import { TaskStatusEnum } from 'src/enums/status.enum';
+import { AttachmentI } from './attachment.model';
+import { CommentI } from './comment.model';
+import { TaskTagI } from './task_tag.model';
 
 export interface TaskI {
   id?: number;
@@ -17,4 +20,9 @@ export interface TaskI {
   status: TaskStatusEnum;
   deadline?: string;
   blockReason?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  attachments?: AttachmentI[];
+  comments?: CommentI[];
+  tags?: TaskTagI[];
 }

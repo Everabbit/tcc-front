@@ -53,9 +53,9 @@
 import { defineComponent, PropType, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { TagI } from 'src/models/tag.model';
-import ProjectService from 'src/services/project.service';
 import { getContrastColor } from 'src/utils/utils';
 import { ResponseI } from 'src/models/response.model';
+import TagService from 'src/services/tag.service';
 
 export default defineComponent({
   name: 'AddTagDialogComponent',
@@ -88,9 +88,9 @@ export default defineComponent({
         $q.loading.show();
         let response: ResponseI = null;
         if (newTag.value.id) {
-          response = await ProjectService.updateTag(newTag.value);
+          response = await TagService.updateTag(newTag.value);
         } else {
-          response = await ProjectService.addTag(newTag.value);
+          response = await TagService.addTag(newTag.value);
         }
 
         if (!response.success) {

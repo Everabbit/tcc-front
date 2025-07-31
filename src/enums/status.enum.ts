@@ -1,20 +1,20 @@
 export enum TaskStatusEnum {
-  PENDING = 0, // Aguardando início
-  IN_PROGRESS = 1, // Em andamento
-  BLOCKED = 2, // Travada por algum motivo
-  REVIEW = 3, // Em revisão
-  DONE = 4, // Finalizada
-  CANCELED = 5, // Cancelada
+  PENDING = 1, // Aguardando início
+  IN_PROGRESS = 2, // Em andamento
+  BLOCKED = 3, // Travada por algum motivo
+  REVIEW = 4, // Em revisão
+  DONE = 5, // Finalizada
+  CANCELED = 6, // Cancelada
 }
 
 export enum VersionStatusEnum {
-  DRAFT = 0, // Rascunho
-  DEVELOPMENT = 1, // Em desenvolvimento
-  TESTING = 2, // Em testes
-  STAGING = 3, // Preparada pro deploy
-  RELEASED = 4, // Já lançada
-  DEPRECATED = 5, // Obsoleta
-  ROLLED_BACK = 6, // Revertida por bugão
+  DRAFT = 1, // Rascunho
+  DEVELOPMENT = 2, // Em desenvolvimento
+  TESTING = 3, // Em testes
+  STAGING = 4, // Preparada pro deploy
+  RELEASED = 5, // Já lançada
+  DEPRECATED = 6, // Obsoleta
+  ROLLED_BACK = 7, // Revertida por bugão
 }
 
 export const VersionStatus = [

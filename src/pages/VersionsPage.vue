@@ -147,6 +147,7 @@ import emitter from 'src/utils/event_bus';
 import { clone, fromBase64, toBase64 } from 'src/utils/transform';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { formatDate } from 'src/utils/utils';
 
 export default {
   components: { CreateVersionDialogComponent },
@@ -312,17 +313,6 @@ export default {
           });
         }
       });
-    }
-
-    function formatDate(date: Date): string {
-      if (!date) {
-        return '';
-      }
-      const newDate = new Date(date.toString());
-      const day = newDate.getDate().toString().padStart(2, '0');
-      const month = (newDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = newDate.getFullYear();
-      return `${day}/${month}/${year}`;
     }
 
     function getProjectStatusName(status: VersionStatusEnum): string {

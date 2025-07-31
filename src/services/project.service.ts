@@ -174,54 +174,13 @@ export default class ProjectService {
     }
   }
 
-  static async addTag(tag: TagI): Promise<ResponseI> {
+  static async getMembers(projectId: number): Promise<ResponseI> {
     try {
-      if (!tag) {
-        throw Error('Informe uma etiqueta válida!');
+      if (!projectId) {
+        throw Error('Informe um id válido!');
       }
 
-      const response: AxiosResponse = await api.post(`/projects/createtag`, tag);
-
-      if (response.status === 200) {
-        return response.data;
-      } else {
-        throw Error(response.data.message);
-      }
-    } catch (err: any) {
-      const response: ResponseI = {
-        message: err.response.data.message || err,
-        success: false,
-      };
-      return response;
-    }
-  }
-
-  static async removeTag(tagId: number): Promise<ResponseI> {
-    try {
-      if (!tagId) {
-        throw Error('Informe uma etiqueta válida!');
-      }
-      const response: AxiosResponse = await api.delete(`/projects/deletetag/${tagId}`);
-
-      if (response.status === 200) {
-        return response.data;
-      } else {
-        throw Error(response.data.message);
-      }
-    } catch (err: any) {
-      const response: ResponseI = {
-        message: err.response.data.message || err,
-        success: false,
-      };
-      return response;
-    }
-  }
-  static async updateTag(tag: TagI): Promise<ResponseI> {
-    try {
-      if (!tag) {
-        throw Error('Informe uma etiqueta válida!');
-      }
-      const response: AxiosResponse = await api.put(`/projects/updatetag`, tag);
+      const response: AxiosResponse = await api.get(`/projects/listmembers/${projectId}`);
 
       if (response.status === 200) {
         return response.data;

@@ -386,6 +386,8 @@ import { required } from 'src/utils/validation';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { formatDate, getUsernameInitials } from 'src/utils/utils';
+import TagService from 'src/services/tag.service';
 
 export default {
   components: {
@@ -502,8 +504,7 @@ export default {
             message: 'Projeto atualizado com successo!',
           });
 
-          //reescrever formulário
-          await getProject();
+          $router.push('/p/projetos');
         } else {
           $q.notify({
             type: 'negative',
@@ -572,27 +573,6 @@ export default {
       ];
       const randomIndex = Math.floor(Math.random() * pastelColors.length);
       return pastelColors[randomIndex];
-    }
-
-    function formatDate(date: Date): string {
-      if (!date) {
-        return '';
-      }
-      const newDate = new Date(date.toString());
-      const day = newDate.getDate().toString().padStart(2, '0');
-      const month = (newDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = newDate.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-
-    function getUsernameInitials(username: string): string {
-      if (!username) return '';
-      const names = username.split(' ');
-      if (names.length === 1) {
-        return names[0].substring(0, 2).toUpperCase();
-      } else {
-        return names[0].charAt(0).toUpperCase() + names[names.length - 1].charAt(0).toUpperCase();
-      }
     }
 
     async function createVersion(id: number | null = null): Promise<void> {
@@ -681,7 +661,7 @@ export default {
       }).onOk(async () => {
         try {
           $q.loading.show();
-          const response: ResponseI = await ProjectService.removeTag(tagId);
+          const response: ResponseI = await TagService.removeTag(tagId);
           if (!response.success) {
             throw Error(response.message);
           }

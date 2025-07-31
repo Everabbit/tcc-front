@@ -1,115 +1,292 @@
 <template>
-  <q-card class="dialog-card">
+  <q-card class="task-dialog-card">
     <q-form ref="formRef" @submit="onSave">
       <q-card-section class="dialog-header">
         <div class="text-h6">
+          <q-icon name="mdi-format-list-bulleted-square" class="q-mr-sm" />
           {{ isEditing ? 'Editar Tarefa' : 'Criar Nova Tarefa' }}
         </div>
         <q-btn icon="mdi-close" flat round dense v-close-popup />
       </q-card-section>
 
-      <q-card-section class="dialog-content">
-        <q-input
-          label="Título da Tarefa *"
-          v-model="editedTask.title"
-          autofocus
-          outlined
-          class="q-mb-md"
-          :rules="[required('Título')]"
-          hide-bottom-space
-        />
+      <q-separator />
 
-        <q-input
-          label="Descrição (Opcional)"
-          v-model="editedTask.description"
-          outlined
-          type="textarea"
-          rows="3"
-          class="q-mb-md"
-        />
-
-        <div class="row q-col-gutter-md q-mb-md">
-          <div class="col-12 col-sm-6">
-            <q-select
-              label="Status *"
-              v-model="editedTask.status"
-              :options="statusOptions"
+      <q-card-section class="q-pa-md">
+        <div class="row q-col-gutter-x-lg q-col-gutter-y-md">
+          <div class="col-12 col-md-7">
+            <q-input
+              label="Título da Tarefa *"
+              v-model="editedTask.title"
+              autofocus
               outlined
-              emit-value
-              map-options
-              :rules="[required('Status')]"
+              :rules="[required('Título')]"
               hide-bottom-space
+              class="q-mb-md"
             />
-          </div>
-          <div class="col-12 col-sm-6">
-            <q-select
-              label="Prioridade"
-              v-model="editedTask.priority"
-              :options="priorityOptions"
+
+            <q-input
+              label="Descrição"
+              v-model="editedTask.description"
               outlined
-              emit-value
-              map-options
+              type="textarea"
+              rows="5"
             />
-          </div>
-        </div>
 
-        <div class="q-mb-md">
-          <q-input
-            label="Prazo da Tarefa"
-            v-model="deadlineFormatted"
-            readonly
-            outlined
-            mask="##/##/####"
-          >
-            <template v-slot:append>
-              <q-icon name="mdi-calendar" class="cursor-pointer">
-                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                  <q-date v-model="editedTask.deadline" mask="YYYY-MM-DD" minimal color="primary">
-                    <div class="row items-center justify-end q-gutter-sm">
-                      <q-btn label="OK" color="primary" flat v-close-popup />
+            <div class="q-mt-lg">
+              <div class="text-subtitle1 q-mb-sm text-weight-medium">Anexos</div>
+              <q-list
+                separator
+                bordered
+                v-if="editedTask.attachments && editedTask.attachments.length > 0"
+              >
+                <q-item
+                  v-for="file in editedTask.attachments"
+                  :key="file.id"
+                  class="attachment-item"
+                >
+                  <q-item-section avatar>
+                    <q-icon :name="getIconForFileType(file.type)" size="md" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ file.fileName }}</q-item-label>
+                    <q-item-label caption>{{ formatFileSize(file.size) }}</q-item-label>
+                  </q-item-section>
+                  <q-item-section side>
+                    <div class="row items-center">
+                      <q-btn
+                        :href="file.url"
+                        target="_blank"
+                        flat
+                        dense
+                        round
+                        icon="mdi-download"
+                        color="primary"
+                      >
+                        <q-tooltip>Baixar</q-tooltip>
+                      </q-btn>
+                      <q-btn flat dense round icon="mdi-delete-outline" color="negative">
+                        <q-tooltip>Remover</q-tooltip>
+                      </q-btn>
                     </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
-        </div>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+              <q-file
+                outlined
+                v-model="files"
+                accept=".jpg, .jpeg, .png, .pdf, .zip, .doc, .docx"
+                class="q-mt-sm"
+                label="Adicionar novos arquivos"
+                multiple
+                counter
+                use-chips
+                append
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-paperclip" />
+                </template>
+              </q-file>
+            </div>
 
-        <q-select
-          label="Responsável (Opcional)"
-          v-model="editedTask.assigneeId"
-          :options="assigneeOptions"
-          outlined
-          emit-value
-          map-options
-          clearable
-          use-input
-          @filter="filterAssignee"
-          class="q-mb-md"
-        >
-          <template v-slot:prepend>
-            <q-icon name="mdi-account-star-outline" />
-          </template>
-        </q-select>
+            <div class="q-mt-lg">
+              <div class="text-subtitle1 q-mb-sm text-weight-medium">Comentários</div>
+              <q-scroll-area style="height: 20vh" class="rounded-borders q-pa-sm" bordered>
+                <div
+                  v-if="!editedTask.comments || editedTask.comments.length === 0"
+                  class="text-center text-grey q-pa-md"
+                >
+                  Nenhum comentário ainda.
+                </div>
+                <q-list separator v-else>
+                  <q-item
+                    v-for="comment in editedTask.comments"
+                    :key="comment.id"
+                    class="comment-item"
+                  >
+                    <q-item-section avatar>
+                      <q-avatar>
+                        <q-img v-if="comment.author.image" :src="comment.author.image" />
+                        <span v-else>{{ getUsernameInitials(comment.author.username) }}</span>
+                      </q-avatar>
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="text-weight-bold">{{
+                        comment.author.username
+                      }}</q-item-label>
+                      <q-item-label>{{ comment.content }}</q-item-label>
+                      <q-item-label caption>
+                        {{ new Date(comment.createdAt).toLocaleString() }}
+                        <span v-if="comment.edited">(editado)</span>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-scroll-area>
+              <q-input
+                v-model="newCommentText"
+                outlined
+                type="textarea"
+                placeholder="Adicionar um comentário..."
+                class="q-mt-sm"
+                rows="2"
+              >
+                <template v-slot:after>
+                  <q-btn round dense flat icon="mdi-send" :disable="!newCommentText" />
+                </template>
+              </q-input>
+            </div>
+          </div>
 
-        <div class="q-mb-md">
-          <label class="text-caption">Anexos (Opcional)</label>
-          <q-file
-            outlined
-            v-model="files"
-            accept=".jpg, .jpeg, .png, .pdf, .zip"
-            class="q-mt-xs"
-            label="Clique para escolher os arquivos"
-            multiple
-            counter
-            use-chips
-          >
-            <template v-slot:prepend>
-              <q-icon name="mdi-paperclip" />
-            </template>
-          </q-file>
+          <div class="col-12 col-md-5">
+            <div class="details-sidebar q-pa-md rounded-borders">
+              <div class="text-subtitle1 q-mb-md text-weight-medium">Detalhes da Tarefa</div>
+
+              <q-select
+                label="Status *"
+                v-model="editedTask.status"
+                :options="statusOptions"
+                outlined
+                emit-value
+                map-options
+                :rules="[required('Status')]"
+                hide-bottom-space
+                class="q-mb-md"
+              />
+
+              <q-select
+                label="Responsável"
+                v-model="editedTask.assigneeId"
+                :options="assigneeOptions"
+                outlined
+                emit-value
+                map-options
+                clearable
+                use-input
+                @filter="filterAssignee"
+                class="q-mb-md"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-account-star-outline" />
+                </template>
+              </q-select>
+
+              <q-select
+                label="Prioridade"
+                v-model="editedTask.priority"
+                :options="priorityOptions"
+                outlined
+                emit-value
+                map-options
+                class="q-mb-md"
+              />
+
+              <q-input
+                label="Prazo da Tarefa"
+                v-model="deadlineFormatted"
+                readonly
+                outlined
+                mask="##/##/####"
+                class="q-mb-md"
+              >
+                <template v-slot:append>
+                  <q-icon name="mdi-calendar" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date
+                        v-model="editedTask.deadline"
+                        mask="YYYY-MM-DD"
+                        minimal
+                        color="primary"
+                      >
+                        <div class="row items-center justify-end q-gutter-sm">
+                          <q-btn label="OK" color="primary" flat v-close-popup />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+
+              <q-select
+                label="Tags"
+                v-model="editedTask.tags"
+                :options="availableTags"
+                outlined
+                multiple
+                use-chips
+                stack-label
+                emit-value
+                map-options
+                option-value="id"
+                option-label="name"
+                class="q-mb-md"
+              >
+                <template v-slot:option="scope">
+                  <q-item v-bind="scope.itemProps">
+                    <q-item-section
+                      :style="{
+                        'background-color': scope.opt.color,
+                        color: getContrastColor(scope.opt.color),
+                        'border-radius': '4px',
+                      }"
+                    >
+                      <q-item-label class="text-weight-bold q-mx-md">
+                        {{ scope.opt.name }}
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </template>
+                <template v-slot:prepend>
+                  <q-icon name="mdi-tag" />
+                </template>
+                <template v-slot:selected-item="scope">
+                  <q-chip
+                    removable
+                    dense
+                    @remove="scope.removeAtIndex(scope.index)"
+                    :tabindex="scope.tabindex"
+                    :style="{
+                      'background-color': scope.opt.color,
+                      color: getContrastColor(scope.opt.color),
+                    }"
+                  >
+                    {{ scope.opt.name }}
+                  </q-chip>
+                </template>
+              </q-select>
+
+              <div v-if="isEditing" class="q-mt-md">
+                <q-separator class="q-mb-md" />
+                <q-list dense>
+                  <q-item>
+                    <q-item-section avatar>
+                      <q-icon name="mdi-calendar-plus" color="grey-7" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label caption>Criada em</q-item-label>
+                      <q-item-label>{{
+                        new Date(editedTask.createdAt).toLocaleDateString() || 'Não disponível'
+                      }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item v-if="editedTask.updatedAt">
+                    <q-item-section avatar>
+                      <q-icon name="mdi-calendar-arrow-right" color="grey-7" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label caption>Iniciada em</q-item-label>
+                      <q-item-label>{{
+                        new Date(editedTask.updatedAt).toLocaleDateString()
+                      }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
+            </div>
+          </div>
         </div>
       </q-card-section>
+
+      <q-separator />
 
       <q-card-actions align="right" class="dialog-footer">
         <q-btn label="Cancelar" color="grey" v-close-popup flat />
@@ -117,6 +294,7 @@
           :label="isEditing ? 'Salvar Alterações' : 'Criar Tarefa'"
           color="primary"
           type="submit"
+          unelevated
         />
       </q-card-actions>
     </q-form>
@@ -126,17 +304,26 @@
 <script lang="ts">
 import { ref, onMounted, computed, defineComponent } from 'vue';
 import { QForm, useQuasar } from 'quasar';
-import { required } from 'src/utils/validation'; // Supondo que você tenha este utilitário
+import { required } from 'src/utils/validation';
 import { TaskI } from 'src/models/task.model';
 import { TaskStatus, TaskStatusEnum } from 'src/enums/status.enum';
-import { PriorityEnum } from 'src/enums/task_priority.enum';
-import { UserBasicI } from 'src/models/user.model';
+import { PriorityEnum, PriorityValues } from 'src/enums/task_priority.enum';
+import ProjectService from 'src/services/project.service';
+import { ProjectParticipationI } from 'src/models/project.model';
+import TaskService from 'src/services/task.service';
+import {
+  getContrastColor,
+  getIconForFileType,
+  formatFileSize,
+  getUsernameInitials,
+} from 'src/utils/utils';
+import { TagI } from 'src/models/tag.model';
+import TagService from 'src/services/tag.service';
 
 export default defineComponent({
-  name: 'CreateTaskDialog',
   props: {
-    task: {
-      type: Object as () => TaskI,
+    taskId: {
+      type: Number,
       default: null,
     },
     statusId: {
@@ -147,13 +334,19 @@ export default defineComponent({
       type: Number,
       required: true,
     },
+    projectId: {
+      type: Number,
+      required: true,
+    },
   },
-  emits: ['save'],
+  emits: ['close'],
 
   setup(props, { emit }) {
     const $q = useQuasar();
     const formRef = ref<QForm | null>(null);
-    const isEditing = computed(() => !!props.task);
+    const isEditing = computed(() => !!props.taskId);
+    const newCommentText = ref<string>('');
+    const availableTags = ref<TagI[]>([]);
 
     const defaultTask: TaskI = {
       id: null,
@@ -166,12 +359,11 @@ export default defineComponent({
       versionId: props.versionId,
     };
 
-    const editedTask = ref<TaskI>({ ...(props.task || defaultTask) });
+    const editedTask = ref<TaskI>({ ...defaultTask });
     const files = ref<File[]>([]);
 
-    // --- Opções e Filtros (Simulação de dados) ---
-    const allAssignees = ref<UserBasicI[]>([]);
-    const assigneeOptions = ref<any[]>([]);
+    const allAssignees = ref<ProjectParticipationI[]>([]);
+    const assigneeOptions = ref<{ label: string; value: number }[]>([]);
 
     const statusOptions = ref<{ label: string; value: TaskStatusEnum }[]>(
       TaskStatus.map((status) => ({
@@ -180,31 +372,88 @@ export default defineComponent({
       })),
     );
 
-    const priorityOptions = [
-      { label: 'Baixa', value: PriorityEnum.LOW },
-      { label: 'Média', value: PriorityEnum.MEDIUM },
-      { label: 'Alta', value: PriorityEnum.HIGH },
-    ];
+    const priorityOptions = ref<{ label: string; value: PriorityEnum }[]>(
+      PriorityValues.map((priority) => ({
+        label: priority.name,
+        value: priority.id,
+      })),
+    );
+
+    async function fetchTask() {
+      if (!props.taskId) return;
+      try {
+        $q.loading.show();
+        const response = await TaskService.getOne(props.taskId);
+        if (!response.success) {
+          throw Error(response.message);
+        }
+        editedTask.value = { ...response.data };
+        if (response.data.deadline) {
+          const date = new Date(response.data.deadline);
+          editedTask.value.deadline = date.toISOString().split('T')[0];
+        }
+
+        $q.loading.hide();
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro ao buscar tarefa:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao buscar a tarefa.',
+        });
+      }
+    }
 
     async function fetchUsers() {
-      // Simula a chamada a um UserService.getBasicUserList()
-      allAssignees.value = [
-        { id: 1, username: 'john.doe' },
-        { id: 2, username: 'jane.smith' },
-        { id: 3, username: 'carlos.silva' },
-      ];
-      assigneeOptions.value = allAssignees.value.map((u) => ({
-        label: u.username,
-        value: u.id,
-      }));
+      try {
+        $q.loading.show();
+        const response = await ProjectService.getMembers(props.projectId);
+
+        if (!response.success) {
+          throw Error(response.message);
+        }
+        allAssignees.value = response.data;
+        assigneeOptions.value = allAssignees.value.map((u) => ({
+          label: u.user.username,
+          value: u.user.id,
+        }));
+        $q.loading.hide();
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao buscar usuários.',
+        });
+      }
+    }
+
+    async function fetchTags() {
+      try {
+        $q.loading.show();
+        const response = await TagService.getAll(props.projectId);
+
+        if (!response.success) {
+          throw Error(response.message);
+        }
+        availableTags.value = response.data;
+        $q.loading.hide();
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao buscar usuários.',
+        });
+      }
     }
 
     function filterAssignee(val: string, update: (callbackFn: () => void) => void) {
       if (val === '') {
         update(() => {
           assigneeOptions.value = allAssignees.value.map((u) => ({
-            label: u.username,
-            value: u.id,
+            label: u.user.username,
+            value: u.user.id,
           }));
         });
         return;
@@ -212,12 +461,11 @@ export default defineComponent({
       update(() => {
         const needle = val.toLowerCase();
         assigneeOptions.value = allAssignees.value
-          .filter((v) => v.username.toLowerCase().indexOf(needle) > -1)
-          .map((u) => ({ label: u.username, value: u.id }));
+          .filter((v) => v.user.username.toLowerCase().indexOf(needle) > -1)
+          .map((u) => ({ label: u.user.username, value: u.user.id }));
       });
     }
 
-    // --- Lógica de Data ---
     const deadlineFormatted = computed({
       get: () => {
         if (!editedTask.value.deadline) return '';
@@ -236,48 +484,56 @@ export default defineComponent({
       },
     });
 
-    // --- Submissão do Formulário ---
-    async function onSave() {
-      const isValid = await formRef.value?.validate();
-      if (!isValid) {
-        $q.notify({
-          type: 'negative',
-          message: 'Corrija os erros no formulário',
-        });
-        return;
-      }
-
-      $q.loading.show({ message: 'Salvando...' });
-
-      // Cria o FormData para enviar ao backend
-      const formData = new FormData();
-      formData.append('task', JSON.stringify(editedTask.value));
-      if (files.value.length > 0) {
-        files.value.forEach((file) => formData.append('attachments', file));
-      }
-
+    async function onSave(): Promise<void> {
       try {
-        // Exemplo: const response = await TaskService.save(formData);
-        console.log('Dados a serem enviados:', editedTask.value);
-        console.log('Arquivos:', files.value);
+        const isValid = await formRef.value?.validate();
+        if (!isValid) {
+          $q.notify({
+            type: 'negative',
+            message: 'Corrija os erros no formulário',
+          });
+          return;
+        }
 
-        // Simulando sucesso
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        $q.loading.show();
 
-        emit('save'); // Avisa o componente pai para recarregar a lista
+        const formData = new FormData();
+
+        formData.append('task', JSON.stringify(editedTask.value));
+        if (files.value.length > 0) {
+          files.value.forEach((file) => formData.append('attachment', file));
+        }
+        const response = await TaskService.create(formData);
+
+        if (!response.success) {
+          throw Error(response.message);
+        }
+
+        $q.loading.hide();
+        emit('close');
 
         $q.notify({
           type: 'positive',
           message: `Tarefa ${isEditing.value ? 'atualizada' : 'criada'} com sucesso!`,
         });
       } catch (error) {
-        $q.notify({ type: 'negative', message: 'Falha ao salvar a tarefa.' });
-      } finally {
         $q.loading.hide();
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message:
+            error.message ||
+            `Ocorreu um erro ao ${isEditing.value ? 'atualizar' : 'criar'} tarefa.`,
+        });
       }
     }
 
     onMounted(() => {
+      if (isEditing.value) {
+        fetchTask();
+      }
+
+      fetchTags();
       fetchUsers();
     });
 
@@ -293,15 +549,21 @@ export default defineComponent({
       onSave,
       required,
       filterAssignee,
+      getContrastColor,
+      getIconForFileType,
+      formatFileSize,
+      getUsernameInitials,
+      newCommentText,
+      availableTags,
     };
   },
 });
 </script>
 
 <style scoped>
-.dialog-card {
+.task-dialog-card {
   width: 100%;
-  max-width: 800px;
+  max-width: 1100px;
   min-width: 0;
   color: var(--text-color);
   box-sizing: border-box;
@@ -311,42 +573,38 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #333;
-  padding: 15px 20px;
-  flex-wrap: wrap;
-}
-
-.dialog-content {
-  padding: 20px;
-  overflow: auto;
+  padding: 16px 24px;
 }
 
 .dialog-footer {
-  border-top: 1px solid #333;
-  padding: 15px 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  padding: 16px 24px;
 }
 
-@media (max-width: 768px) {
-  .dialog-header,
-  .dialog-content,
-  .dialog-footer {
-    padding: 12px 15px;
-  }
+.details-sidebar {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background-color: #f9f9f9;
+}
+.body--dark .details-sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #2c2c2c;
 }
 
-@media (max-width: 480px) {
-  .dialog-header {
-    align-items: flex-start;
-    gap: 10px;
-  }
+.attachment-item .q-item__section--avatar {
+  color: #1976d2;
+}
 
-  .dialog-header,
-  .dialog-content,
-  .dialog-footer {
-    padding: 10px 12px;
+.comment-item {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.q-file .q-field__control {
+  height: auto !important;
+}
+
+@media (max-width: 1023px) {
+  .details-sidebar {
+    margin-top: 20px;
   }
 }
 </style>

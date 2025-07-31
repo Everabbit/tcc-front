@@ -1,18 +1,18 @@
 <template>
   <q-page padding>
+    <q-dialog v-model="showTaskDialog">
+      <CreateTaskDialogComponent
+        :version-id="version.id"
+        :status-id="taskStatusId"
+        :task-id="taskEditId"
+        :project-id="projectId"
+        @close="saveTask"
+      ></CreateTaskDialogComponent>
+    </q-dialog>
     <div class="row items-center justify-between q-mb-md">
-      <div>
-        <q-btn flat round icon="arrow_back" @click="$router.back()" />
-        <q-btn-toggle
-          v-model="viewMode"
-          toggle-color="primary"
-          :options="[
-            { label: 'Kanban', value: 'kanban', icon: 'mdi-view-column' },
-            { label: 'Lista', value: 'list', icon: 'mdi-view-list' },
-          ]"
-        />
-      </div>
-
+      <!-- Botão de voltar -->
+      <q-btn flat round icon="arrow_back" @click="$router.back()" />
+      <!-- Filtro -->
       <div class="filter-group">
         <span class="filter-label">Prioridade:</span>
         <q-select
@@ -36,7 +36,7 @@
           map-options
           emit-value
           option-value="id"
-          option-label="username"
+          option-label="value"
           style="min-width: 180px"
           class="filter-select"
         />
@@ -61,25 +61,27 @@
               class="task-card"
               flat
               :class="getPriorityClass(task.priority)"
-              @click="openTaskDialog(task)"
+              @click="openTaskDialog(task.id, task.status)"
             >
               <q-card-section>
                 <div class="text-subtitle2 text-bold q-mb-sm">
                   {{ task.title }}
                 </div>
-                <p class="task-description text-grey-5">
+                <p class="task-description text-grey-5" v-if="task.description">
                   {{ task.description }}
                 </p>
 
-                <div class="task-footer">
+                <div class="task-footer" v-if="task.assignee">
                   <q-avatar size="24px" color="primary" text-color="white" class="q-mr-sm">{{
-                    getInitials(task.assignee.name)
+                    getInitials(task.assignee.username)
                   }}</q-avatar>
-                  <span class="text-caption">{{ task.assignee.name }}</span>
+                  <span class="text-caption">{{ task.assignee.username }}</span>
                 </div>
-                <div class="task-dates q-mt-sm">
+                <div class="task-dates q-mt-sm" v-if="task.deadline">
                   <q-icon name="mdi-calendar" />
-                  <span class="text-caption q-ml-xs">{{ task.dueDate }}</span>
+                  <span class="text-caption q-ml-xs">{{
+                    formatDate(new Date(task.deadline))
+                  }}</span>
                 </div>
               </q-card-section>
             </q-card>
@@ -96,10 +98,6 @@
         />
       </div>
     </div>
-
-    <q-dialog v-model="showTaskDialog">
-      <CreateTaskDialogComponent :version-id="version.id"></CreateTaskDialogComponent>
-    </q-dialog>
   </q-page>
 </template>
 
@@ -118,6 +116,10 @@ import VersionService from 'src/services/version.service';
 import { fromBase64 } from 'src/utils/transform';
 import { ResponseI } from 'src/models/response.model';
 import CreateTaskDialogComponent from 'src/components/dialogs/CreateTaskDialog.component.vue';
+import TaskService from 'src/services/task.service';
+import { formatDate } from 'src/utils/utils';
+import ProjectService from 'src/services/project.service';
+import { ProjectParticipationI } from 'src/models/project.model';
 
 export default {
   props: {
@@ -134,7 +136,7 @@ export default {
   setup(props) {
     const $q = useQuasar();
     const viewMode = ref<string>('kanban');
-    const priorityFilter = ref<number>(1);
+    const priorityFilter = ref<filterTaskPriorityEnum>(filterTaskPriorityEnum.ALL);
     const version = ref<VersionI>({
       projectId: 0,
       project: undefined,
@@ -150,7 +152,7 @@ export default {
     ]);
     const allTasks = ref<TaskI[]>([]);
     const assigneeFilter = ref<number>(0);
-    const assigneeOptions = ref<UserBasicI[]>([]);
+    const assigneeOptions = ref<{ id: number; value: string }[]>([{ id: 0, value: 'Todos' }]);
     const columns = ref<ColumnI[]>(
       TaskStatus.map((status) => ({
         id: status.id,
@@ -158,11 +160,13 @@ export default {
         tasks: [],
       })),
     );
+    const projectId = ref<number>(parseInt(fromBase64(props.projectId)));
 
     const showTaskDialog = ref<boolean>(false);
-    const taskEditId = ref<string>(null);
+    const taskEditId = ref<number>(null);
+    const taskStatusId = ref<TaskStatusEnum>(TaskStatusEnum.PENDING);
 
-    const filteredColumns = computed(() => {
+    const filteredColumns = computed((): ColumnI[] => {
       if (!priorityFilter.value && !assigneeFilter.value) {
         return columns.value;
       }
@@ -171,24 +175,57 @@ export default {
 
       return newColumns.map((column) => {
         column.tasks = column.tasks.filter((task) => {
-          const priorityMatch = priorityFilter.value
-            ? task.priority === priorityFilter.value
-            : true;
-          const assigneeMatch = assigneeFilter.value
-            ? task.assignee.id === assigneeFilter.value
-            : true;
+          let priorityMatch = true;
+          switch (priorityFilter.value) {
+            case filterTaskPriorityEnum.HIGH:
+              priorityMatch = task.priority === PriorityEnum.HIGH;
+              break;
+            case filterTaskPriorityEnum.MEDIUM:
+              priorityMatch = task.priority === PriorityEnum.MEDIUM;
+              break;
+            case filterTaskPriorityEnum.LOW:
+              priorityMatch = task.priority === PriorityEnum.LOW;
+              break;
+            default:
+              break;
+          }
+          let assigneeMatch = true;
+          if (assigneeFilter.value !== 0) {
+            assigneeMatch = assigneeFilter.value ? task.assignee.id === assigneeFilter.value : true;
+          }
+
           return priorityMatch && assigneeMatch;
         });
         return column;
       });
     });
 
+    async function fetchUsers() {
+      try {
+        $q.loading.show();
+        const response = await ProjectService.getMembers(projectId.value);
+
+        if (!response.success) {
+          throw Error(response.message);
+        }
+        $q.loading.hide();
+        response.data.forEach((u) => {
+          assigneeOptions.value.push({ id: u.user.id, value: u.user.username });
+        });
+        assigneeFilter.value = assigneeOptions.value[0].id;
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao buscar usuários.',
+        });
+      }
+    }
+
     const fetchData = async () => {
       $q.loading.show();
       try {
-        // Aqui você chamaria seus serviços para buscar dados da versão e tarefas
-        // Ex: const tasksResponse = await TaskService.getByVersion(props.versionId);
-
         const responseVersion: ResponseI = await VersionService.getOne(
           fromBase64(props.versionId),
           fromBase64(props.projectId),
@@ -200,16 +237,14 @@ export default {
 
         version.value = responseVersion.data;
 
-        const tasksResponse: TaskI[] = [];
+        const tasksResponse: ResponseI = await TaskService.getAll(version.value.id);
 
-        allTasks.value = tasksResponse;
-        distributeTasks(tasksResponse);
+        if (!tasksResponse.success) {
+          throw Error(tasksResponse.message);
+        }
 
-        // Preencher opções de filtro de responsáveis
-        const assignees = tasksResponse.map((t) => t.assignee);
-        const uniqueAssignees = Array.from(
-          new Map(assignees.map((item) => [item['id'], item])).values(),
-        );
+        allTasks.value = tasksResponse.data;
+        distributeTasks(tasksResponse.data);
         $q.loading.hide();
       } catch (error) {
         $q.loading.hide();
@@ -221,21 +256,20 @@ export default {
       }
     };
 
-    const handleTaskMove = (changeEvent, newStatusId) => {
+    const handleTaskMove = async (changeEvent, newStatusId) => {
       const { added, moved } = changeEvent;
       const eventData = added || moved;
 
       if (eventData) {
         const taskId = eventData.element.id;
-        // Lógica para persistir a mudança no backend
-        console.log(`Tarefa ${taskId} movida para a coluna ${newStatusId}`);
-        // Ex: await TaskService.updateStatus(taskId, newStatusId);
+        await TaskService.updateStatus(taskId, newStatusId);
 
-        // Atualiza o statusId no objeto da tarefa localmente
         const task = allTasks.value.find((t) => t.id === taskId);
+
         if (task) {
           task.status = newStatusId;
         }
+        distributeTasks(allTasks.value);
 
         $q.notify({
           type: 'positive',
@@ -246,12 +280,21 @@ export default {
       }
     };
 
-    const openTaskDialog = (task: TaskI | null = null, statusId: number | null = null) => {
+    const openTaskDialog = (taskId: number | null = null, statusId: number | null = null) => {
       showTaskDialog.value = true;
+      taskEditId.value = taskId ? taskId : null;
+      taskStatusId.value = statusId ? statusId : TaskStatusEnum.PENDING;
+    };
+
+    const saveTask = () => {
+      fetchData();
+      showTaskDialog.value = false;
+      taskEditId.value = null;
+      taskStatusId.value = TaskStatusEnum.PENDING;
     };
 
     const distributeTasks = (tasks: TaskI[]) => {
-      columns.value.forEach((col) => (col.tasks = [])); // Limpa as colunas
+      columns.value.forEach((col) => (col.tasks = []));
       tasks.forEach((task) => {
         const column = columns.value.find((c) => c.id === task.status);
         if (column) {
@@ -275,6 +318,7 @@ export default {
 
     onMounted(() => {
       fetchData();
+      fetchUsers();
     });
 
     return {
@@ -291,6 +335,11 @@ export default {
       openTaskDialog,
       getInitials,
       version,
+      taskEditId,
+      taskStatusId,
+      projectId,
+      saveTask,
+      formatDate,
     };
   },
 };
