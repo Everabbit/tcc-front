@@ -325,19 +325,18 @@ export default {
 
     onMounted(async () => {
       emitter.on('open-version-dialog', openDialog);
-      emitter.on('close-version-dialog', closeDialog);
       await getVersions();
     });
 
     onBeforeUnmount(() => {
       emitter.off('open-version-dialog', openDialog);
-      emitter.off('close-version-dialog', closeDialog);
     });
 
     return {
       showDialog,
       getVersions,
       openDialog,
+      closeDialog,
       statusFilter,
       statusOptions,
       sortFilter,
@@ -349,7 +348,6 @@ export default {
       versionEditId,
       removeVersion,
       gotToTasks,
-      closeDialog,
       versionsFiltered,
     };
   },

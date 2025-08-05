@@ -155,12 +155,12 @@ import { required, validateEmail, validateSelect } from '../../utils/validation'
 import { QForm, useQuasar } from 'quasar';
 import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
-import emitter from 'src/utils/event_bus';
 import UserService from 'src/services/user.service';
 import { UserBasicI } from 'src/models/user.model';
 
 export default {
-  setup() {
+  emits: ['close'],
+  setup(props, { emit }) {
     const $q = useQuasar();
     const form = ref<QForm>(null);
 
@@ -256,7 +256,7 @@ export default {
           };
 
           //fechar popup
-          emitter.emit('close');
+          emit('close');
         } else {
           $q.notify({
             type: 'negative',

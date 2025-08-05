@@ -136,7 +136,6 @@ import { VersionStatus, VersionStatusEnum } from 'src/enums/status.enum';
 import { ResponseI } from 'src/models/response.model';
 import { VersionCreateI } from 'src/models/version.model';
 import VersionService from 'src/services/version.service';
-import emitter from 'src/utils/event_bus';
 import { clone, fromBase64 } from 'src/utils/transform';
 import { required } from 'src/utils/validation';
 import { computed, onMounted, ref } from 'vue';
@@ -152,7 +151,7 @@ export default {
       required: false,
     },
   },
-  setup(props) {
+  setup(props, { emit }) {
     const versionCreateData = ref<VersionCreateI>({
       name: '',
       status: VersionStatusEnum.DRAFT,
@@ -222,7 +221,7 @@ export default {
           };
 
           //fechar popup
-          emitter.emit('close');
+          emit('close');
         } else {
           $q.loading.hide();
           $q.notify({

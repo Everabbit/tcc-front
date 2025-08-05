@@ -1,7 +1,7 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md" style="min-height: 0px">
     <q-dialog persistent v-model="showDialog">
-      <CreateProjectDialog v-if="showDialog"></CreateProjectDialog>
+      <CreateProjectDialog v-if="showDialog" @close="closeDialog"></CreateProjectDialog>
     </q-dialog>
 
     <div class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm">
@@ -117,10 +117,6 @@ export default {
       } catch (error) {
         $q.loading.hide();
         console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao buscar projetos.',
-        });
       }
     }
 
@@ -171,18 +167,17 @@ export default {
 
     onMounted(async () => {
       emitter.on('open-project-dialog', openDialog);
-      emitter.on('close-project-dialog', closeDialog);
       await getProjects();
     });
 
     onBeforeUnmount(() => {
       emitter.off('open-project-dialog', openDialog);
-      emitter.off('close-project-dialog', closeDialog);
     });
 
     return {
       showDialog,
       openDialog,
+      closeDialog,
       ProjectStatus,
       statusFilter,
       statusOptions,

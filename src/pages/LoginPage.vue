@@ -145,6 +145,7 @@ import UserService from 'src/services/user.service';
 import { clone } from 'src/utils/transform';
 import { setHttpToken } from 'src/services/api';
 import { useRouter } from 'vue-router';
+import { getUsernameInitials } from 'src/utils/utils';
 
 export default {
   setup() {
@@ -216,14 +217,7 @@ export default {
         logged.value = true;
         userBasic.value = response.data;
 
-        const nameParts = userBasic.value.fullName.split(' ');
-        if (nameParts.length > 1) {
-          userBasic.value.initials = (
-            nameParts[0].charAt(0) + nameParts[1].charAt(0)
-          ).toUpperCase();
-        } else {
-          userBasic.value.initials = nameParts[0].substring(0, 2).toUpperCase();
-        }
+        userBasic.value.initials = getUsernameInitials(userBasic.value.username);
       } catch (error) {
         logged.value = false;
       }

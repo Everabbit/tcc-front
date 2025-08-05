@@ -30,6 +30,35 @@ export default class TaskService {
     }
   }
 
+  static async update(taskId: number, task: FormData): Promise<ResponseI> {
+    try {
+      if (!taskId) {
+        throw Error('Informe um ID de tarefa válido!');
+      }
+      if (!task) {
+        throw Error('Informe uma tarefa válida!');
+      }
+
+      const response: AxiosResponse = await api.put(`/tasks/update/${taskId}`, task, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async getAll(versionId: number): Promise<ResponseI> {
     try {
       if (!versionId) {

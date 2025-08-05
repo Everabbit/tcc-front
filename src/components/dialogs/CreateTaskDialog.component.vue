@@ -33,7 +33,7 @@
             />
 
             <div class="q-mt-lg">
-              <div class="text-subtitle1 q-mb-sm text-weight-medium">Anexos</div>
+              <div class="text-subtitle1 q-mb-sm text-weight-medium">Anexos atuais</div>
               <q-list
                 separator
                 bordered
@@ -71,6 +71,8 @@
                   </q-item-section>
                 </q-item>
               </q-list>
+              <div v-else class="text-center text-grey q-pa-md">Nenhum arquivo anexado ainda.</div>
+              <q-separator />
               <q-file
                 outlined
                 v-model="files"
@@ -162,6 +164,7 @@
                 map-options
                 clearable
                 use-input
+                @focus="fetchUsers"
                 @filter="filterAssignee"
                 class="q-mb-md"
               >
@@ -208,7 +211,7 @@
 
               <q-select
                 label="Tags"
-                v-model="editedTask.tags"
+                v-model="selectedTags"
                 :options="availableTags"
                 outlined
                 multiple
@@ -219,6 +222,7 @@
                 option-value="id"
                 option-label="name"
                 class="q-mb-md"
+                @focus="fetchTags"
               >
                 <template v-slot:option="scope">
                   <q-item v-bind="scope.itemProps">
@@ -303,7 +307,7 @@
 
 <script lang="ts">
 import { ref, onMounted, computed, defineComponent } from 'vue';
-import { QForm, useQuasar } from 'quasar';
+import { is, QForm, useQuasar } from 'quasar';
 import { required } from 'src/utils/validation';
 import { TaskI } from 'src/models/task.model';
 import { TaskStatus, TaskStatusEnum } from 'src/enums/status.enum';
@@ -319,6 +323,8 @@ import {
 } from 'src/utils/utils';
 import { TagI } from 'src/models/tag.model';
 import TagService from 'src/services/tag.service';
+import { RefSymbol } from '@vue/reactivity';
+import { TaskTagI } from 'src/models/task_tag.model';
 
 export default defineComponent({
   props: {
@@ -347,6 +353,7 @@ export default defineComponent({
     const isEditing = computed(() => !!props.taskId);
     const newCommentText = ref<string>('');
     const availableTags = ref<TagI[]>([]);
+    const selectedTags = ref<number[]>([]);
 
     const defaultTask: TaskI = {
       id: null,
@@ -357,6 +364,11 @@ export default defineComponent({
       assigneeId: null,
       deadline: null,
       versionId: props.versionId,
+      tags: [],
+      attachments: [],
+      comments: [],
+      createdAt: null,
+      updatedAt: null,
     };
 
     const editedTask = ref<TaskI>({ ...defaultTask });
@@ -391,6 +403,16 @@ export default defineComponent({
         if (response.data.deadline) {
           const date = new Date(response.data.deadline);
           editedTask.value.deadline = date.toISOString().split('T')[0];
+        }
+        if (response.data.tags && response.data.tags.length > 0) {
+          await fetchTags();
+
+          response.data.tags.forEach((e) => {
+            selectedTags.value.push(e.tagId);
+          });
+        }
+        if (response.data.assigneeId) {
+          await fetchUsers();
         }
 
         $q.loading.hide();
@@ -497,13 +519,26 @@ export default defineComponent({
 
         $q.loading.show();
 
+        if (selectedTags.value.length > 0) {
+          selectedTags.value.forEach((tagId) => {
+            const taskTag: TaskTagI = {
+              taskId: editedTask.value.id,
+              tagId: tagId,
+            };
+            editedTask.value.tags.push(taskTag);
+          });
+        }
+
         const formData = new FormData();
 
         formData.append('task', JSON.stringify(editedTask.value));
         if (files.value.length > 0) {
           files.value.forEach((file) => formData.append('attachment', file));
         }
-        const response = await TaskService.create(formData);
+        console.log(isEditing.value);
+        const response = isEditing.value
+          ? await TaskService.update(props.taskId, formData)
+          : await TaskService.create(formData);
 
         if (!response.success) {
           throw Error(response.message);
@@ -532,9 +567,6 @@ export default defineComponent({
       if (isEditing.value) {
         fetchTask();
       }
-
-      fetchTags();
-      fetchUsers();
     });
 
     return {
@@ -553,8 +585,11 @@ export default defineComponent({
       getIconForFileType,
       formatFileSize,
       getUsernameInitials,
+      fetchTags,
       newCommentText,
       availableTags,
+      selectedTags,
+      fetchUsers,
     };
   },
 });
