@@ -2,6 +2,7 @@ import { AxiosResponse } from 'axios';
 import { ResponseI } from 'src/models/response.model';
 import api from './api';
 import { TaskStatusEnum } from 'src/enums/status.enum';
+import { CommentI } from 'src/models/comment.model';
 
 export default class TaskService {
   static async create(task: FormData): Promise<ResponseI> {
@@ -113,6 +114,71 @@ export default class TaskService {
       }
 
       const response: AxiosResponse = await api.get(`/tasks/get/${taskId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+  static async addComment(comment: CommentI): Promise<ResponseI> {
+    try {
+      if (!comment) {
+        throw Error('Informe um comentário válido!');
+      }
+
+      const response: AxiosResponse = await api.post(`/tasks/addcomment`, comment);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async removeComment(commentId: number): Promise<ResponseI> {
+    try {
+      if (!commentId) {
+        throw Error('Informe um ID de comentário válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/tasks/removecomment/${commentId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async updateComment(comment: CommentI): Promise<ResponseI> {
+    try {
+      if (!comment || !comment.id) {
+        throw Error('Informe um comentário válido com ID!');
+      }
+
+      const response: AxiosResponse = await api.put(`/tasks/updatecomment`, comment);
 
       if (response.status === 200) {
         return response.data;

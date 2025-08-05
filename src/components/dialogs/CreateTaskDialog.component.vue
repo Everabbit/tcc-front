@@ -38,6 +38,7 @@
                 separator
                 bordered
                 v-if="editedTask.attachments && editedTask.attachments.length > 0"
+                style="overflow-y: auto; max-height: 11vh"
               >
                 <q-item
                   v-for="file in editedTask.attachments"
@@ -54,17 +55,24 @@
                   <q-item-section side>
                     <div class="row items-center">
                       <q-btn
-                        :href="file.url"
                         target="_blank"
                         flat
                         dense
                         round
-                        icon="mdi-download"
+                        icon="mdi-eye-outline"
                         color="primary"
+                        @click="openAttachment(file.id)"
                       >
-                        <q-tooltip>Baixar</q-tooltip>
+                        <q-tooltip>Abrir</q-tooltip>
                       </q-btn>
-                      <q-btn flat dense round icon="mdi-delete-outline" color="negative">
+                      <q-btn
+                        flat
+                        dense
+                        round
+                        icon="mdi-delete-outline"
+                        color="negative"
+                        @click="removeAttachment(file.id)"
+                      >
                         <q-tooltip>Remover</q-tooltip>
                       </q-btn>
                     </div>
@@ -72,7 +80,7 @@
                 </q-item>
               </q-list>
               <div v-else class="text-center text-grey q-pa-md">Nenhum arquivo anexado ainda.</div>
-              <q-separator />
+              <q-separator class="q-my-sm" />
               <q-file
                 outlined
                 v-model="files"
@@ -92,7 +100,7 @@
 
             <div class="q-mt-lg">
               <div class="text-subtitle1 q-mb-sm text-weight-medium">Comentários</div>
-              <q-scroll-area style="height: 20vh" class="rounded-borders q-pa-sm" bordered>
+              <q-scroll-area style="height: 16vh" class="rounded-borders q-pa-sm" bordered>
                 <div
                   v-if="!editedTask.comments || editedTask.comments.length === 0"
                   class="text-center text-grey q-pa-md"
@@ -106,20 +114,75 @@
                     class="comment-item"
                   >
                     <q-item-section avatar>
-                      <q-avatar>
+                      <q-avatar size="40px" color="primary" text-color="white" class="q-mr-sm">
                         <q-img v-if="comment.author.image" :src="comment.author.image" />
                         <span v-else>{{ getUsernameInitials(comment.author.username) }}</span>
                       </q-avatar>
                     </q-item-section>
-                    <q-item-section>
-                      <q-item-label class="text-weight-bold">{{
-                        comment.author.username
+
+                    <!-- Modo de Edição -->
+                    <q-item-section v-if="editingComment?.id === comment.id">
+                      <q-input
+                        v-model="editedCommentContent"
+                        type="textarea"
+                        rows="2"
+                        dense
+                        autofocus
+                        outlined
+                        @keyup.esc="cancelEditingComment"
+                      />
+                      <div class="q-mt-sm q-gutter-sm">
+                        <q-btn
+                          label="Salvar"
+                          color="primary"
+                          unelevated
+                          dense
+                          @click="saveEditedComment"
+                        />
+                        <q-btn
+                          label="Cancelar"
+                          color="grey"
+                          flat
+                          dense
+                          @click="cancelEditingComment"
+                        />
+                      </div>
+                    </q-item-section>
+
+                    <!-- Modo de Visualização -->
+                    <q-item-section v-else>
+                      <q-item-label class="text-weight-bold">
+                        {{ comment.author.username }}
+                      </q-item-label>
+                      <q-item-label style="white-space: pre-wrap">{{
+                        comment.content
                       }}</q-item-label>
-                      <q-item-label>{{ comment.content }}</q-item-label>
                       <q-item-label caption>
                         {{ new Date(comment.createdAt).toLocaleString() }}
-                        <span v-if="comment.edited">(editado)</span>
+                        <span v-if="comment.edited" class="text-italic text-grey-7">(editado)</span>
                       </q-item-label>
+                    </q-item-section>
+
+                    <!-- Botões de Ação -->
+                    <q-item-section v-if="user.id === comment.authorId && !editingComment" side>
+                      <q-btn flat dense round icon="mdi-dots-vertical">
+                        <q-menu anchor="bottom right" self="top right">
+                          <q-list dense style="min-width: 100px">
+                            <q-item clickable v-close-popup @click="startEditingComment(comment)">
+                              <q-item-section avatar>
+                                <q-icon name="mdi-pencil-outline" size="xs" />
+                              </q-item-section>
+                              <q-item-section>Editar</q-item-section>
+                            </q-item>
+                            <q-item clickable v-close-popup @click="removeComment(comment)">
+                              <q-item-section avatar>
+                                <q-icon name="mdi-delete-outline" size="xs" />
+                              </q-item-section>
+                              <q-item-section>Remover</q-item-section>
+                            </q-item>
+                          </q-list>
+                        </q-menu>
+                      </q-btn>
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -133,7 +196,14 @@
                 rows="2"
               >
                 <template v-slot:after>
-                  <q-btn round dense flat icon="mdi-send" :disable="!newCommentText" />
+                  <q-btn
+                    round
+                    dense
+                    flat
+                    icon="mdi-send"
+                    :disable="!newCommentText"
+                    @click="addComment"
+                  />
                 </template>
               </q-input>
             </div>
@@ -164,7 +234,6 @@
                 map-options
                 clearable
                 use-input
-                @focus="fetchUsers"
                 @filter="filterAssignee"
                 class="q-mb-md"
               >
@@ -222,7 +291,6 @@
                 option-value="id"
                 option-label="name"
                 class="q-mb-md"
-                @focus="fetchTags"
               >
                 <template v-slot:option="scope">
                   <q-item v-bind="scope.itemProps">
@@ -325,6 +393,9 @@ import { TagI } from 'src/models/tag.model';
 import TagService from 'src/services/tag.service';
 import { RefSymbol } from '@vue/reactivity';
 import { TaskTagI } from 'src/models/task_tag.model';
+import { CommentI } from 'src/models/comment.model';
+import { UserBasicI } from 'src/models/user.model';
+import { getUserBasicInfo } from 'src/utils/user.utils';
 
 export default defineComponent({
   props: {
@@ -354,6 +425,10 @@ export default defineComponent({
     const newCommentText = ref<string>('');
     const availableTags = ref<TagI[]>([]);
     const selectedTags = ref<number[]>([]);
+    const editingComment = ref<CommentI | null>(null);
+    const editedCommentContent = ref<string>('');
+
+    const user = ref<UserBasicI>(getUserBasicInfo());
 
     const defaultTask: TaskI = {
       id: null,
@@ -443,10 +518,6 @@ export default defineComponent({
       } catch (error) {
         $q.loading.hide();
         console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao buscar usuários.',
-        });
       }
     }
 
@@ -463,10 +534,6 @@ export default defineComponent({
       } catch (error) {
         $q.loading.hide();
         console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao buscar usuários.',
-        });
       }
     }
 
@@ -529,13 +596,20 @@ export default defineComponent({
           });
         }
 
+        for (let i = editedTask.value.tags.length - 1; i >= 0; i--) {
+          const existingTag = editedTask.value.tags[i];
+          if (!selectedTags.value.includes(existingTag.tagId)) {
+            editedTask.value.tags.splice(i, 1);
+          }
+        }
+
         const formData = new FormData();
 
         formData.append('task', JSON.stringify(editedTask.value));
         if (files.value.length > 0) {
           files.value.forEach((file) => formData.append('attachment', file));
         }
-        console.log(isEditing.value);
+
         const response = isEditing.value
           ? await TaskService.update(props.taskId, formData)
           : await TaskService.create(formData);
@@ -563,10 +637,177 @@ export default defineComponent({
       }
     }
 
+    const removeAttachment = (attachmentId: number) => {
+      $q.dialog({
+        title: 'Confirmar Remoção',
+        message: 'Tem certeza de que deseja remover este anexo?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'red',
+        },
+        persistent: false,
+      }).onOk(async () => {
+        try {
+          $q.loading.show();
+          editedTask.value.attachments = editedTask.value.attachments.filter(
+            (att) => att.id !== attachmentId,
+          );
+          $q.loading.hide();
+          $q.notify({
+            type: 'positive',
+            message: 'Anexo removido com sucesso!',
+          });
+        } catch (error) {
+          $q.loading.hide();
+          console.error('Erro ao remover anexo:', error);
+          $q.notify({
+            type: 'negative',
+            message: error.message || 'Ocorreu um erro ao remover o anexo.',
+          });
+        }
+      });
+    };
+
+    const openAttachment = (attachmentId: number) => {
+      const attachment = editedTask.value.attachments.find((att) => att.id === attachmentId);
+      if (attachment && attachment.url) {
+        window.open(attachment.url, '_blank');
+      } else {
+        $q.notify({
+          type: 'negative',
+          message: 'URL do anexo não encontrada.',
+        });
+      }
+    };
+
+    const startEditingComment = (comment: CommentI) => {
+      editingComment.value = { ...comment };
+      editedCommentContent.value = comment.content;
+    };
+
+    const cancelEditingComment = () => {
+      editingComment.value = null;
+      editedCommentContent.value = '';
+    };
+
+    const saveEditedComment = async () => {
+      if (!editingComment.value || !editedCommentContent.value.trim()) return;
+
+      try {
+        $q.loading.show();
+        const editedComment: CommentI = {
+          ...editingComment.value,
+          content: editedCommentContent.value,
+        };
+
+        const response = await TaskService.updateComment(editedComment);
+
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+
+        const index = editedTask.value.comments.findIndex((c) => c.id === editingComment.value.id);
+        if (index !== -1) {
+          editedTask.value.comments.splice(index, 1, response.data);
+        }
+
+        $q.notify({ type: 'positive', message: 'Comentário atualizado com sucesso!' });
+        cancelEditingComment();
+      } catch (error) {
+        console.error('Erro ao atualizar comentário:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Falha ao atualizar o comentário.',
+        });
+      } finally {
+        $q.loading.hide();
+      }
+    };
+
+    const removeComment = (commentToRemove: CommentI) => {
+      $q.dialog({
+        title: 'Confirmar Remoção',
+        message: 'Tem certeza que deseja remover este comentário?',
+        cancel: { label: 'Não', color: 'grey', flat: true },
+        ok: { label: 'Sim, remover', color: 'negative', unelevated: true },
+        persistent: true,
+      }).onOk(async () => {
+        try {
+          $q.loading.show();
+          const response = await TaskService.removeComment(commentToRemove.id);
+
+          if (!response.success) {
+            throw new Error(response.message);
+          }
+
+          const index = editedTask.value.comments.findIndex((c) => c.id === commentToRemove.id);
+          if (index !== -1) {
+            editedTask.value.comments.splice(index, 1);
+          }
+
+          $q.notify({ type: 'positive', message: 'Comentário removido com sucesso!' });
+        } catch (error) {
+          console.error('Erro ao remover comentário:', error);
+          $q.notify({
+            type: 'negative',
+            message: error.message || 'Falha ao remover o comentário.',
+          });
+        } finally {
+          $q.loading.hide();
+        }
+      });
+    };
+
+    const addComment = async (): Promise<void> => {
+      if (!newCommentText.value.trim()) return;
+
+      try {
+        $q.loading.show();
+        const newComment: CommentI = {
+          id: 0,
+          taskId: editedTask.value.id,
+          authorId: user.value.id,
+          content: newCommentText.value,
+          createdAt: new Date(),
+          edited: false,
+          author: user.value,
+          updatedAt: undefined,
+        };
+
+        const response = await TaskService.addComment(newComment);
+
+        if (!response.success) {
+          throw Error(response.message);
+        }
+
+        editedTask.value.comments.push(response.data);
+        newCommentText.value = '';
+        $q.loading.hide();
+        $q.notify({
+          type: 'positive',
+          message: 'Comentário adicionado com sucesso!',
+        });
+      } catch (error) {
+        $q.loading.hide();
+        console.error('Erro ao adicionar comentário:', error);
+        $q.notify({
+          type: 'negative',
+          message: error.message || 'Ocorreu um erro ao adicionar o comentário.',
+        });
+      }
+    };
+
     onMounted(() => {
       if (isEditing.value) {
         fetchTask();
       }
+      fetchUsers();
+      fetchTags();
     });
 
     return {
@@ -585,11 +826,19 @@ export default defineComponent({
       getIconForFileType,
       formatFileSize,
       getUsernameInitials,
-      fetchTags,
       newCommentText,
       availableTags,
       selectedTags,
-      fetchUsers,
+      removeAttachment,
+      openAttachment,
+      addComment,
+      user,
+      editingComment,
+      editedCommentContent,
+      startEditingComment,
+      cancelEditingComment,
+      saveEditedComment,
+      removeComment,
     };
   },
 });

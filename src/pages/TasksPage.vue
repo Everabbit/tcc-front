@@ -71,17 +71,26 @@
                   {{ task.description }}
                 </p>
 
-                <div class="task-footer" v-if="task.assignee">
-                  <q-avatar size="24px" color="primary" text-color="white" class="q-mr-sm">{{
-                    getInitials(task.assignee.username)
-                  }}</q-avatar>
-                  <span class="text-caption">{{ task.assignee.username }}</span>
-                </div>
-                <div class="task-dates q-mt-sm" v-if="task.deadline">
-                  <q-icon name="mdi-calendar" />
-                  <span class="text-caption q-ml-xs">{{
-                    formatDate(new Date(task.deadline))
-                  }}</span>
+                <div class="flex items-center justify-between">
+                  <div class="task-dates q-mt-sm" v-if="task.deadline">
+                    <q-icon name="mdi-calendar" />
+                    <span class="text-caption q-ml-xs">{{
+                      formatDate(new Date(task.deadline))
+                    }}</span>
+                  </div>
+                  <div class="task-footer" v-if="task.assignee">
+                    <q-avatar size="24px" color="primary" text-color="white"
+                      >{{ getUsernameInitials(task.assignee.username) }}
+                      <q-tooltip
+                        class="bg-primary text-body2"
+                        position="top"
+                        anchor="bottom middle"
+                        self="top middle"
+                        :offset="[10, 10]"
+                        >{{ task.assignee.username }}</q-tooltip
+                      >
+                    </q-avatar>
+                  </div>
                 </div>
               </q-card-section>
             </q-card>
@@ -117,7 +126,7 @@ import { fromBase64 } from 'src/utils/transform';
 import { ResponseI } from 'src/models/response.model';
 import CreateTaskDialogComponent from 'src/components/dialogs/CreateTaskDialog.component.vue';
 import TaskService from 'src/services/task.service';
-import { formatDate } from 'src/utils/utils';
+import { formatDate, getUsernameInitials } from 'src/utils/utils';
 import ProjectService from 'src/services/project.service';
 import { ProjectParticipationI } from 'src/models/project.model';
 
@@ -303,15 +312,6 @@ export default {
       });
     };
 
-    const getInitials = (name: string = '') => {
-      if (!name) return '??';
-      const names = name.split(' ');
-      if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-      }
-      return name.substring(0, 2).toUpperCase();
-    };
-
     const getPriorityClass = (priority: string) => {
       return `priority-${priority}`;
     };
@@ -333,7 +333,7 @@ export default {
       handleTaskMove,
       getPriorityClass,
       openTaskDialog,
-      getInitials,
+      getUsernameInitials,
       version,
       taskEditId,
       taskStatusId,
@@ -359,11 +359,10 @@ export default {
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 16px;
-  min-height: 84vh;
+  height: 83vh;
 }
 
 .kanban-column {
-  flex: 0 0 calc(20% - 16px);
   background-color: $grey-2;
   border-radius: 8px;
   padding: 8px;
@@ -372,6 +371,27 @@ export default {
 
   .body--dark & {
     background-color: $grey-10;
+  }
+
+  //DIVIDINDO a quantidade de colunas pelo tamanho da tela usando o maximp flex: 0 0 calc(16.8% - 16px);
+  @media (max-width: 1920px) {
+    flex: 0 0 calc(16.8% - 16px);
+  }
+
+  @media (max-width: 1700px) {
+    flex: 0 0 calc(24% - 16px);
+  }
+
+  @media (max-width: 1440px) {
+    flex: 0 0 calc(32% - 16px);
+  }
+
+  @media (max-width: 1024px) {
+    flex: 0 0 calc(48% - 16px);
+  }
+
+  @media (max-width: 768px) {
+    flex: 0 0 calc(90% - 16px);
   }
 }
 
@@ -392,8 +412,11 @@ export default {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   gap: 12px;
   min-height: 150px;
+  width: 100%;
+  padding-right: 8px;
 }
 
 .task-card {

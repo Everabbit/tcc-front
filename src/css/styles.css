@@ -143,3 +143,6 @@ body.body--dark {
 .filter-select .q-field__native {
   padding: 8px 12px;
 }
+.q-textarea .q-field__native {
+  resize: none !important;
+}

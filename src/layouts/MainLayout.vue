@@ -78,13 +78,11 @@
         <!-- Rodapé com Perfil do Usuário -->
         <div class="sidebar-footer absolute-bottom q-pa-md">
           <q-item class="user-profile row items-center q-pa-none">
-            <!-- Adicione min-width: 0 -->
             <q-avatar size="40px" color="primary" text-color="white" class="q-mr-sm">
               <img v-if="userBasic.image" :src="userBasic.image" />
               <span v-else>{{ userBasic.initials }}</span>
             </q-avatar>
             <div class="col self-stretch column justify-center">
-              <!-- Container ajustado -->
               <div class="text-weight-medium text-truncate">{{ userBasic.fullName }}</div>
               <small class="text-grey-5 text-truncate">
                 {{ userBasic.username || userBasic.email }}
@@ -109,6 +107,8 @@ import { UserBasicI } from 'src/models/user.model';
 import UserService from 'src/services/user.service';
 import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
+import { getUserBasicInfo, setUserBasicInfo } from 'src/utils/user.utils';
+import { getUsernameInitials } from 'src/utils/utils';
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
@@ -134,14 +134,20 @@ export default {
 
     async function getBasicInfo(): Promise<void> {
       try {
-        const response: ResponseI = await UserService.getBasicUser();
+        const userResponse: UserBasicI = await getUserBasicInfo();
 
-        if (!response.success) {
-          throw Error(response.message);
+        if (!userResponse) {
+          const response: ResponseI = await UserService.getBasicUser();
+          if (!response.success) {
+            throw Error(response.message);
+          }
+
+          userBasic.value = response.data;
+          userBasic.value.initials = getUsernameInitials(userBasic.value.username);
+          setUserBasicInfo(userBasic.value);
+        } else {
+          userBasic.value = userResponse;
         }
-        userBasic.value = response.data;
-
-        userBasic.value.initials = userBasic.value.username.substring(0, 2).toUpperCase();
       } catch (error) {
         console.error('Erro:', error);
         router.push('/');

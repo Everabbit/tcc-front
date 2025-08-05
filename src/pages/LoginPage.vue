@@ -68,7 +68,6 @@
           </q-card-section>
         </q-card>
       </div>
-      <!-- se estiver logado imagem, nome de usuário e botão de entrar -->
       <div v-else class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
         <q-card flat class="full-width">
           <q-card-section>
@@ -146,6 +145,7 @@ import { clone } from 'src/utils/transform';
 import { setHttpToken } from 'src/services/api';
 import { useRouter } from 'vue-router';
 import { getUsernameInitials } from 'src/utils/utils';
+import { getUserBasicInfo, setUserBasicInfo } from 'src/utils/user.utils';
 
 export default {
   setup() {
@@ -176,6 +176,22 @@ export default {
           const token: string = response.data;
 
           setHttpToken(token);
+
+          const userResponse: ResponseI = await UserService.getBasicUser();
+
+          if (!userResponse.success) {
+            throw Error(userResponse.message);
+          }
+
+          userBasic.value = userResponse.data;
+          userBasic.value.initials = getUsernameInitials(userBasic.value.username);
+          setUserBasicInfo(userBasic.value);
+          logged.value = true;
+
+          $q.notify({
+            type: 'positive',
+            message: 'Login realizado com sucesso!',
+          });
 
           router.push('/p/dashboard');
         } else {
@@ -209,15 +225,21 @@ export default {
 
     async function getBasicInfo(): Promise<void> {
       try {
-        const response: ResponseI = await UserService.getBasicUser();
+        const userResponse: UserBasicI = await getUserBasicInfo();
 
-        if (!response.success) {
-          throw Error(response.message);
+        if (!userResponse) {
+          const response: ResponseI = await UserService.getBasicUser();
+          if (!response.success) {
+            throw Error(response.message);
+          }
+
+          userBasic.value = response.data;
+          userBasic.value.initials = getUsernameInitials(userBasic.value.username);
+          setUserBasicInfo(userBasic.value);
+        } else {
+          userBasic.value = userResponse;
         }
         logged.value = true;
-        userBasic.value = response.data;
-
-        userBasic.value.initials = getUsernameInitials(userBasic.value.username);
       } catch (error) {
         logged.value = false;
       }
