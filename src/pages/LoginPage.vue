@@ -139,18 +139,19 @@ import { useQuasar } from 'quasar';
 import { required, email, minLength, passwordMatch, checkboxRequired } from '../utils/validation';
 import type { UserBasicI, UserLoginI } from 'src/models/user.model';
 import { onMounted, ref } from 'vue';
-import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
 import { clone } from 'src/utils/transform';
-import { setHttpToken } from 'src/services/api';
+import { getHttpToken, removeHttpToken, setHttpToken } from 'src/services/api';
 import { useRouter } from 'vue-router';
 import { getUsernameInitials } from 'src/utils/utils';
 import { getUserBasicInfo, setUserBasicInfo } from 'src/utils/user.utils';
+import { useApi } from 'src/services/useApi';
 
 export default {
   setup() {
     const $q = useQuasar();
     const router = useRouter();
+    const { handleApi } = useApi();
     const form = ref<QForm>(null);
     const user = ref<UserLoginI>({
       email: '',
@@ -163,48 +164,32 @@ export default {
     });
 
     async function acessAccount(): Promise<void> {
-      try {
-        const isValid = await form.value.validate();
+      const isValid = await form.value.validate();
 
-        if (isValid) {
-          const response: ResponseI = await UserService.login(clone(user.value));
+      if (isValid) {
+        const response = await handleApi<string>(() => UserService.login(clone(user.value)), {
+          successMessage: 'Login realizado com sucesso!',
+          errorMessage: 'Ocorreu um erro ao realizar o login.',
+        });
 
-          if (!response.success) {
-            throw Error(response.message);
-          }
+        const token: string = response;
 
-          const token: string = response.data;
+        setHttpToken(token);
 
-          setHttpToken(token);
+        const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
+          errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
+        });
 
-          const userResponse: ResponseI = await UserService.getBasicUser();
+        userBasic.value = userResponse;
+        userBasic.value.initials = getUsernameInitials(userBasic.value.username);
+        setUserBasicInfo(userBasic.value);
+        logged.value = true;
 
-          if (!userResponse.success) {
-            throw Error(userResponse.message);
-          }
-
-          userBasic.value = userResponse.data;
-          userBasic.value.initials = getUsernameInitials(userBasic.value.username);
-          setUserBasicInfo(userBasic.value);
-          logged.value = true;
-
-          $q.notify({
-            type: 'positive',
-            message: 'Login realizado com sucesso!',
-          });
-
-          router.push('/p/dashboard');
-        } else {
-          $q.notify({
-            type: 'negative',
-            message: 'Corrija os erros no formulário',
-          });
-        }
-      } catch (error) {
-        console.error('Erro na validação:', error);
+        router.push('/p/dashboard');
+      } else {
         $q.notify({
           type: 'negative',
-          message: 'Ocorreu um erro ao validar o formulário',
+          message: 'Corrija os erros no formulário',
         });
       }
     }
@@ -224,24 +209,20 @@ export default {
     }
 
     async function getBasicInfo(): Promise<void> {
-      try {
-        const userResponse: UserBasicI = await getUserBasicInfo();
+      if (getHttpToken()) {
+        const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
+          errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
+        });
 
-        if (!userResponse) {
-          const response: ResponseI = await UserService.getBasicUser();
-          if (!response.success) {
-            throw Error(response.message);
-          }
-
-          userBasic.value = response.data;
+        if (userResponse) {
+          userBasic.value = userResponse;
           userBasic.value.initials = getUsernameInitials(userBasic.value.username);
           setUserBasicInfo(userBasic.value);
+          logged.value = true;
         } else {
-          userBasic.value = userResponse;
+          logged.value = false;
+          removeHttpToken();
         }
-        logged.value = true;
-      } catch (error) {
-        logged.value = false;
       }
     }
 

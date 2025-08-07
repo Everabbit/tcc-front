@@ -1,5 +1,6 @@
 import { VersionStatusEnum } from 'src/enums/status.enum';
 import { ProjectI } from './project.model';
+import { TaskI } from './task.model';
 
 export interface VersionI {
   id?: number;
@@ -11,6 +12,7 @@ export interface VersionI {
   startDate: Date;
   endDate?: Date;
   githubBranch?: string;
+  tasks: TaskI[];
 }
 
 export interface VersionCreateI {

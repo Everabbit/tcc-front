@@ -65,12 +65,12 @@
       </div>
       <div class="project-progress">
         <q-linear-progress
-          :value="project.progress / 100"
+          :value="project.progress"
           color="primary"
           size="6px"
           style="width: 80px"
         />
-        <span class="text-caption text-grey">{{ project.progress }}%</span>
+        <span class="text-caption text-grey">{{ project.progress * 100 }}%</span>
       </div>
     </q-card-actions>
   </q-card>

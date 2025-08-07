@@ -14,7 +14,6 @@
             <q-input outlined v-model="newTag.name" label="Nome da Etiqueta" hide-bottom-space>
             </q-input>
           </div>
-          <!-- campo de seleção de cor -->
 
           <div class="col-4 q-pl-md">
             <q-input
@@ -51,17 +50,16 @@
 
 <script lang="ts">
 import { defineComponent, PropType, ref } from 'vue';
-import { useQuasar } from 'quasar';
 import { TagI } from 'src/models/tag.model';
 import { getContrastColor } from 'src/utils/utils';
-import { ResponseI } from 'src/models/response.model';
 import TagService from 'src/services/tag.service';
+import { useApi } from 'src/services/useApi';
 
 export default defineComponent({
   name: 'AddTagDialogComponent',
   props: {
     projectId: {
-      type: String,
+      type: Number,
       required: true,
     },
     tag: {
@@ -70,46 +68,26 @@ export default defineComponent({
     },
   },
   setup(props, { emit }) {
-    const $q = useQuasar();
     const newTag = ref<TagI>(null);
+    const { handleApi } = useApi();
 
     if (props.tag) {
       newTag.value = props.tag;
     } else {
       newTag.value = {
-        projectId: parseInt(props.projectId),
+        projectId: props.projectId,
         name: '',
         color: '',
       };
     }
 
     async function saveTag(): Promise<void> {
-      try {
-        $q.loading.show();
-        let response: ResponseI = null;
-        if (newTag.value.id) {
-          response = await TagService.updateTag(newTag.value);
-        } else {
-          response = await TagService.addTag(newTag.value);
-        }
-
-        if (!response.success) {
-          throw Error(response.message);
-        }
-        $q.loading.hide();
-        $q.notify({
-          type: 'positive',
-          message: 'Etiqueta criada com sucesso!',
-        });
-        closeDialog();
-      } catch (error) {
-        $q.loading.hide();
-        console.error('Erro ao criar etiqueta:', error.message);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao criar a etiqueta',
-        });
-      }
+      const apiCall = newTag.value.id ? TagService.updateTag : TagService.addTag;
+      await handleApi(() => apiCall(newTag.value), {
+        successMessage: 'Etiqueta criada com sucesso!',
+        errorMessage: 'Ocorreu um erro ao criar a etiqueta',
+      });
+      closeDialog();
     }
 
     function closeDialog(): void {
@@ -130,9 +108,9 @@ export default defineComponent({
 .dialog-card {
   width: 100%;
   max-width: 800px;
-  min-width: 0; /* Remove a largura mínima fixa */
+  min-width: 0;
   color: var(--text-color);
-  box-sizing: border-box; /* Garante que padding não aumente a largura */
+  box-sizing: border-box;
 }
 
 .dialog-header {
@@ -141,23 +119,22 @@ export default defineComponent({
   align-items: center;
   border-bottom: 1px solid #333;
   padding: 15px 20px;
-  flex-wrap: wrap; /* Permite que os itens quebrem linha em telas pequenas */
+  flex-wrap: wrap;
 }
 
 .dialog-content {
   padding: 20px;
-  overflow: auto; /* Adiciona scroll se o conteúdo for muito grande */
+  overflow: auto;
 }
 
 .dialog-footer {
   border-top: 1px solid #333;
   padding: 15px 20px;
   display: flex;
-  flex-wrap: wrap; /* Para botões se ajustarem em telas pequenas */
-  gap: 10px; /* Espaçamento entre itens do footer */
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-/* Media Queries para ajustes em diferentes tamanhos de tela */
 @media (max-width: 768px) {
   .dialog-header,
   .dialog-content,

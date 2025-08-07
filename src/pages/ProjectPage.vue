@@ -318,13 +318,13 @@
                 </td>
                 <td>
                   <div class="text-center">
-                    <span> {{ 20 }}% </span>
+                    <span> {{ getPercentVersionTasks(version.id) * 100 }}% </span>
                   </div>
-                  <q-linear-progress :value="0 / 100" color="accent" />
+                  <q-linear-progress :value="getPercentVersionTasks(version.id)" color="accent" />
                 </td>
                 <td class="text-right">
-                  <q-btn flat dense icon="mdi-pencil" @click="createVersion(version.id)" />
-                  <q-btn flat dense icon="mdi-delete" @click="removeVersion(version.id)" />
+                  <q-btn flat dense icon="mdi-pencil" @click.stop="createVersion(version.id)" />
+                  <q-btn flat dense icon="mdi-delete" @click.stop="removeVersion(version.id)" />
                 </td>
               </tr>
             </tbody>
@@ -373,21 +373,20 @@ import AddTagDialogComponent from 'src/components/dialogs/AddTagDialog.component
 import CreateVersionDialog from 'src/components/dialogs/CreateVersionDialog.component.vue';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesValues } from 'src/enums/roles.enum';
-import { VersionStatus } from 'src/enums/status.enum';
+import { TaskStatusEnum, VersionStatus } from 'src/enums/status.enum';
 import { ProjectI } from 'src/models/project.model';
-import { ResponseI } from 'src/models/response.model';
 import { TagI } from 'src/models/tag.model';
 import ProjectService from 'src/services/project.service';
 import VersionService from 'src/services/version.service';
-import emitter from 'src/utils/event_bus';
 import { clone, fromBase64, toBase64 } from 'src/utils/transform';
 import { getContrastColor } from 'src/utils/utils';
 import { required } from 'src/utils/validation';
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { formatDate, getUsernameInitials } from 'src/utils/utils';
 import TagService from 'src/services/tag.service';
+import { useApi } from 'src/services/useApi';
 
 export default {
   components: {
@@ -404,6 +403,7 @@ export default {
   setup(props) {
     const $q = useQuasar();
     const $router = useRouter();
+    const { handleApi } = useApi();
     const project = ref<ProjectI>({
       creatorId: 0,
       name: '',
@@ -419,23 +419,15 @@ export default {
     const status = clone(ProjectStatusValues);
     const form = ref<QForm>(null);
     const bannerFile = ref<File>(null);
-    const idParse = ref<string>(fromBase64(props.id));
+    const idParse = ref<number>(parseInt(fromBase64(props.id)));
     const versionEditId = ref<string>(null);
     const actuallyTag = ref<TagI>(null);
 
     async function getProject(): Promise<void> {
-      try {
-        const response: ResponseI = await ProjectService.getOne(idParse.value);
-        if (!response.success) {
-          throw Error(response.message);
-        }
-        project.value = response.data;
-      } catch (error) {
-        console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao buscar projeto.',
-        });
+      project.value = await handleApi<ProjectI>(() => ProjectService.getOne(idParse.value), {
+        errorMessage: 'Ocorreu um erro ao buscar projeto.',
+      });
+      if (!project.value) {
         $router.push('/p/projetos');
       }
     }
@@ -482,80 +474,50 @@ export default {
     });
 
     async function updateProject(): Promise<void> {
-      try {
-        const isValid: boolean = await form.value.validate();
+      const isValid: boolean = await form.value.validate();
 
-        if (isValid) {
-          $q.loading.show();
-          const formData: FormData = new FormData();
-          formData.append('project', JSON.stringify(project.value));
-          if (bannerFile.value) {
-            formData.append('banner', bannerFile.value);
-          }
-
-          const response: ResponseI = await ProjectService.update(idParse.value, formData);
-
-          if (!response.success) {
-            throw Error(response.message);
-          }
-          $q.loading.hide();
-          $q.notify({
-            type: 'positive',
-            message: 'Projeto atualizado com successo!',
-          });
-
-          $router.push('/p/projetos');
-        } else {
-          $q.notify({
-            type: 'negative',
-            message: 'Corrija os erros no formulário',
-          });
+      if (isValid) {
+        const formData: FormData = new FormData();
+        formData.append('project', JSON.stringify(project.value));
+        if (bannerFile.value) {
+          formData.append('banner', bannerFile.value);
         }
-      } catch (error) {
-        $q.loading.hide();
-        console.error('Erro na validação:', error.message);
+
+        await handleApi<ProjectI>(() => ProjectService.update(idParse.value, formData), {
+          errorMessage: 'Ocorreu um erro ao atualizar o projeto.',
+          successMessage: 'Projeto atualizado com sucesso!',
+        });
+
+        $router.push('/p/projetos');
+      } else {
         $q.notify({
           type: 'negative',
-          message: error.message || 'Ocorreu um erro ao validar o formulário',
+          message: 'Corrija os erros no formulário',
         });
       }
     }
     async function deleteProject(): Promise<void> {
-      try {
-        $q.dialog({
-          title: 'Confirmar Remoção',
-          message: 'Tem certeza de que deseja remover permanentemente este projeto?',
-          cancel: {
-            label: 'Não',
-            color: 'grey',
-            flat: true,
-          },
-          ok: {
-            label: 'Sim',
-            color: 'red',
-          },
-          persistent: false,
-        }).onOk(async () => {
-          $q.loading.show();
-          const response: ResponseI = await ProjectService.delete(idParse.value);
-          if (!response.success) {
-            throw Error(response.message);
-          }
-          $q.loading.hide();
-          $q.notify({
-            type: 'positive',
-            message: 'Projeto removido com successo!',
-          });
-          $router.push('/p/projetos');
+      $q.dialog({
+        title: 'Confirmar Remoção',
+        message: 'Tem certeza de que deseja remover permanentemente este projeto?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'red',
+        },
+        persistent: false,
+      }).onOk(async () => {
+        await handleApi<ProjectI>(() => ProjectService.delete(idParse.value), {
+          errorMessage: 'Ocorreu um erro ao remover o projeto.',
+          successMessage: 'Projeto removido com sucesso!',
         });
-      } catch (error) {
-        $q.loading.hide();
-        console.error('Erro na validação:', error.message);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao remover projeto',
-        });
-      }
+
+        $router.push('/p/projetos');
+      });
     }
 
     function getRandomColor(): string {
@@ -604,26 +566,12 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        try {
-          $q.loading.show();
-          const response: ResponseI = await VersionService.delete(id.toString());
-          if (!response.success) {
-            throw Error(response.message);
-          }
-          $q.loading.hide();
-          $q.notify({
-            type: 'positive',
-            message: 'Versão removida com sucesso!',
-          });
-          await getProject();
-        } catch (error) {
-          $q.loading.hide();
-          console.error('Erro ao remover versão:', error.message);
-          $q.notify({
-            type: 'negative',
-            message: error.message || 'Ocorreu um erro ao remover a versão',
-          });
-        }
+        await handleApi(() => VersionService.delete(id), {
+          errorMessage: 'Ocorreu um erro ao remover a versão.',
+          successMessage: 'Versão removida com sucesso!',
+        });
+
+        await getProject();
       });
     }
     async function addmembersDialog(): Promise<void> {
@@ -659,31 +607,19 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        try {
-          $q.loading.show();
-          const response: ResponseI = await TagService.removeTag(tagId);
-          if (!response.success) {
-            throw Error(response.message);
-          }
-          $q.loading.hide();
-          $q.notify({
-            type: 'positive',
-            message: 'Etiqueta removida com sucesso!',
-          });
-          await getProject();
-        } catch (error) {
-          $q.loading.hide();
-          console.error('Erro ao remover etiqueta:', error.message);
-          $q.notify({
-            type: 'negative',
-            message: error.message || 'Ocorreu um erro ao remover a etiqueta',
-          });
-        }
+        await handleApi(() => TagService.removeTag(tagId), {
+          errorMessage: 'Ocorreu um erro ao remover a etiqueta.',
+          successMessage: 'Etiqueta removida com sucesso!',
+        });
+
+        await getProject();
       });
     }
 
     function gotToTasks(id: number) {
-      $router.push(`/p/projetos/versoes/tarefas/${toBase64(id.toString())}`);
+      const projectId = props.id;
+      const versionId = toBase64(id.toString());
+      $router.push(`/p/projetos/versoes/tarefas/${projectId}/${versionId}`);
     }
 
     function removeMember(index: number): void {
@@ -703,27 +639,35 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        try {
-          const response: ResponseI = await ProjectService.removeMember(idParse.value, index);
+        await handleApi(() => ProjectService.removeMember(idParse.value, index), {
+          errorMessage: 'Ocorreu um erro ao remover o membro.',
+          successMessage: 'Membro removido com sucesso!',
+        });
 
-          if (!response.success) {
-            throw Error(response.message);
-          }
-
-          $q.notify({
-            type: 'positive',
-            message: 'Membro removido com sucesso!',
-          });
-
-          await getProject();
-        } catch (error) {
-          console.error('Erro ao remover membro:', error);
-          $q.notify({
-            type: 'negative',
-            message: error.message || 'Ocorreu um erro ao remover o membro.',
-          });
-        }
+        await getProject();
       });
+    }
+
+    function getTotalVersionTasks(versionId: number): number {
+      const version = project.value.versions.find((v) => v.id === versionId);
+      if (!version) {
+        return 0;
+      }
+      return version.tasks.length;
+    }
+
+    function getCompletedVersionTasks(versionId: number): number {
+      const version = project.value.versions.find((v) => v.id === versionId);
+      if (!version) {
+        return 0;
+      }
+      return version.tasks.filter((task) => task.status === TaskStatusEnum.DONE).length;
+    }
+
+    function getPercentVersionTasks(versionId: number): number {
+      const completed = getCompletedVersionTasks(versionId);
+      const total = getTotalVersionTasks(versionId);
+      return total > 0 ? completed / total : 0;
     }
 
     onMounted(async () => {
@@ -761,6 +705,7 @@ export default {
       removeTag,
       actuallyTag,
       gotToTasks,
+      getPercentVersionTasks,
     };
   },
 };

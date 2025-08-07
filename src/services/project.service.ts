@@ -31,7 +31,7 @@ export default class ProjectService {
     }
   }
 
-  static async update(id: string, project: FormData): Promise<ResponseI> {
+  static async update(id: number, project: FormData): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
@@ -60,7 +60,7 @@ export default class ProjectService {
     }
   }
 
-  static async delete(id: string): Promise<ResponseI> {
+  static async delete(id: number): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
@@ -100,7 +100,7 @@ export default class ProjectService {
     }
   }
 
-  static async getOne(id: string): Promise<ResponseI> {
+  static async getOne(id: number): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
@@ -122,7 +122,7 @@ export default class ProjectService {
     }
   }
 
-  static async addMembers(id: string, members: FormData): Promise<ResponseI> {
+  static async addMembers(id: number, members: FormData): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
@@ -148,7 +148,7 @@ export default class ProjectService {
     }
   }
 
-  static async removeMember(id: string, memberId: number): Promise<ResponseI> {
+  static async removeMember(id: number, memberId: number): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');

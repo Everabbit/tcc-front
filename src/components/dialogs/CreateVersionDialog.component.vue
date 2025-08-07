@@ -39,11 +39,10 @@
           >
             <q-input
               label="Inicio da Versão"
-              :model-value="formattedStartDate"
+              :model-value="formatDate(new Date(versionCreateData.startDate))"
               readonly
               outlined
               mask="##/##/####"
-              :rules="[(val) => typeof val === 'string' || '']"
               hide-bottom-space
               class="q-mt-sm"
             >
@@ -74,11 +73,12 @@
           >
             <q-input
               label="Prazo da Versão"
-              :model-value="formattedEndDate"
+              :model-value="
+                versionCreateData.endDate ? formatDate(new Date(versionCreateData.endDate)) : ''
+              "
               readonly
               outlined
               mask="##/##/####"
-              :rules="[(val) => typeof val === 'string' || '']"
               hide-bottom-space
               class="q-mt-sm"
             >
@@ -130,20 +130,20 @@
 </template>
 
 <script lang="ts">
-import { version } from 'os';
 import { QForm, useQuasar } from 'quasar';
 import { VersionStatus, VersionStatusEnum } from 'src/enums/status.enum';
-import { ResponseI } from 'src/models/response.model';
 import { VersionCreateI } from 'src/models/version.model';
+import { useApi } from 'src/services/useApi';
 import VersionService from 'src/services/version.service';
 import { clone, fromBase64 } from 'src/utils/transform';
+import { formatDate } from 'src/utils/utils';
 import { required } from 'src/utils/validation';
 import { computed, onMounted, ref } from 'vue';
 
 export default {
   props: {
     projectId: {
-      type: String,
+      type: Number,
       required: true,
     },
     versionId: {
@@ -160,99 +160,60 @@ export default {
     const $q = useQuasar();
     const status = clone(VersionStatus);
     const form = ref<QForm>(null);
+    const { handleApi } = useApi();
 
-    const formattedStartDate = computed<string>(() => {
-      let formatted: string = versionCreateData.value.startDate;
-
-      if (formatted) {
-        const parts: string[] = formatted.split('/');
-        if (parts.length === 3) {
-          return (formatted = `${parts[2]}/${parts[1]}/${parts[0]}`);
-        }
-      }
-      return formatted;
-    });
-    const formattedEndDate = computed<string>(() => {
-      let formatted: string = versionCreateData.value.endDate;
-
-      if (formatted) {
-        const parts: string[] = formatted.split('/');
-        if (parts.length === 3) {
-          return (formatted = `${parts[2]}/${parts[1]}/${parts[0]}`);
-        }
-      }
-      return formatted;
-    });
+    const projectId = ref<number>(props.projectId);
+    const versionId = ref<number>(parseInt(fromBase64(props.versionId)));
 
     const getButtonName = computed<string>(() => {
-      return props.versionId ? 'Atualizar Versão' : 'Criar Versão';
+      return versionId.value ? 'Atualizar Versão' : 'Criar Versão';
     });
 
     async function addVersion(): Promise<void> {
-      try {
-        const isValid: boolean = await form.value.validate();
+      const isValid: boolean = await form.value.validate();
 
-        if (isValid) {
-          $q.loading.show();
-          versionCreateData.value.projectId = parseInt(props.projectId);
-          const formData: FormData = new FormData();
-          formData.append('version', JSON.stringify(versionCreateData.value));
+      if (isValid) {
+        versionCreateData.value.projectId = projectId.value;
+        const formData: FormData = new FormData();
+        formData.append('version', JSON.stringify(versionCreateData.value));
 
-          const response: ResponseI = !props.versionId
-            ? await VersionService.create(formData)
-            : await VersionService.update(fromBase64(props.versionId), formData);
+        const apiCall = () =>
+          versionId.value
+            ? VersionService.update(versionId.value, formData)
+            : VersionService.create(formData);
 
-          if (!response.success) {
-            throw Error(response.message);
-          }
-          $q.loading.hide();
-          $q.notify({
-            type: 'positive',
-            message: `Versão ${versionCreateData.value.name} ${
-              props.versionId ? 'atualizada' : 'criada'
-            } com successo!`,
-          });
+        await handleApi(apiCall, {
+          successMessage: `Versão ${versionCreateData.value.name} ${
+            versionId.value ? 'atualizada' : 'criada'
+          } com sucesso!`,
+          errorMessage: `Ocorreu um erro ao ${versionId.value ? 'atualizar' : 'criar'} a versão.`,
+        });
 
-          //limpar formulário
-          versionCreateData.value = {
-            name: '',
-            status: VersionStatusEnum.DRAFT,
-            projectId: 0,
-          };
+        //limpar formulário
+        versionCreateData.value = {
+          name: '',
+          status: VersionStatusEnum.DRAFT,
+          projectId: 0,
+        };
 
-          //fechar popup
-          emit('close');
-        } else {
-          $q.loading.hide();
-          $q.notify({
-            type: 'negative',
-            message: 'Corrija os erros no formulário',
-          });
-        }
-      } catch (error) {
-        console.error('Erro na validação:', error.message);
+        //fechar popup
+        emit('close');
+      } else {
         $q.notify({
           type: 'negative',
-          message: error.message || 'Ocorreu um erro ao validar o formulário',
+          message: 'Corrija os erros no formulário',
         });
       }
     }
 
     async function getVersion(): Promise<void> {
-      try {
-        const parseVersionId = fromBase64(props.versionId);
-        const response: ResponseI = await VersionService.getOne(parseVersionId, props.projectId);
-        if (!response.success) {
-          throw Error(response.message);
-        }
-        versionCreateData.value = response.data;
-      } catch (error) {
-        console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: error.message || 'Ocorreu um erro ao buscar versão.',
-        });
-      }
+      const data = await handleApi<VersionCreateI>(
+        () => VersionService.getOne(versionId.value, projectId.value),
+        {
+          errorMessage: 'Ocorreu um erro ao buscar versão.',
+        },
+      );
+      versionCreateData.value = data;
     }
 
     onMounted(async () => {
@@ -264,12 +225,11 @@ export default {
     return {
       versionCreateData,
       required,
-      formattedEndDate,
-      formattedStartDate,
       form,
       status,
       addVersion,
       getButtonName,
+      formatDate,
     };
   },
 };

@@ -66,8 +66,8 @@ import { filterEnum } from 'src/enums/filter.enum';
 import { ProjectStatus } from 'src/enums/project_status.enum';
 import { sortEnum } from 'src/enums/sort.enum';
 import { ProjectI } from 'src/models/project.model';
-import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
+import { useApi } from 'src/services/useApi';
 import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
@@ -77,6 +77,7 @@ export default {
 
   setup() {
     const $q = useQuasar();
+    const { handleApi } = useApi();
     const showDialog = ref<boolean>(false);
     const projects = ref<ProjectI[]>([]);
 
@@ -106,18 +107,10 @@ export default {
     }
 
     async function getProjects(): Promise<void> {
-      try {
-        $q.loading.show();
-        const response: ResponseI = await ProjectService.getAll();
-        if (!response.success) {
-          throw Error(response.message);
-        }
-        $q.loading.hide();
-        projects.value = response.data;
-      } catch (error) {
-        $q.loading.hide();
-        console.error('Erro:', error);
-      }
+      const data = await handleApi<ProjectI[]>(() => ProjectService.getAll(), {
+        errorMessage: 'Ocorreu um erro ao buscar projetos.',
+      });
+      projects.value = data;
     }
 
     const projectsFiltered = computed(() => {

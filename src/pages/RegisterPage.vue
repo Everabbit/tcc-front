@@ -146,16 +146,17 @@ import {
 } from '../utils/validation';
 import type { UserRegisterI } from 'src/models/user.model';
 import { ref } from 'vue';
-import { ResponseI } from 'src/models/response.model';
 import UserService from 'src/services/user.service';
 import { setHttpToken } from 'src/services/api';
 import { clone } from 'src/utils/transform';
 import { useRouter } from 'vue-router';
+import { useApi } from 'src/services/useApi';
 
 export default {
   setup() {
     const $q = useQuasar();
     const router = useRouter();
+    const { handleApi } = useApi();
     const form = ref<QForm>(null);
     const user = ref<UserRegisterI>({
       fullName: '',
@@ -168,35 +169,22 @@ export default {
     const confirmPassowrd = ref<string>('');
 
     async function createAccount(): Promise<void> {
-      try {
-        // Validação programática
-        const isValid: boolean = await form.value.validate();
+      const isValid: boolean = await form.value.validate();
 
-        if (isValid && check.value) {
-          checkVerify.value = false;
-          const response: ResponseI = await UserService.register(clone(user.value));
-
-          if (!response.success) {
-            throw Error(response.message);
-          }
-
-          const token: string = response.data;
-
-          setHttpToken(token);
-
-          router.push('/p/dashboard');
-        } else {
-          checkVerify.value = true;
-          $q.notify({
-            type: 'negative',
-            message: 'Corrija os erros no formulário',
-          });
-        }
-      } catch (error) {
-        console.error('Erro na validação:', error);
+      if (isValid && check.value) {
+        checkVerify.value = false;
+        const data = await handleApi<string>(() => UserService.register(clone(user.value)), {
+          successMessage: 'Conta criada com sucesso!',
+          errorMessage: 'Ocorreu um erro ao criar a conta.',
+        });
+        const token: string = data;
+        setHttpToken(token);
+        router.push('/p/dashboard');
+      } else {
+        checkVerify.value = true;
         $q.notify({
           type: 'negative',
-          message: 'Ocorreu um erro ao validar o formulário',
+          message: 'Corrija os erros no formulário',
         });
       }
     }

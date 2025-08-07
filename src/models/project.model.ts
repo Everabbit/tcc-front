@@ -12,7 +12,7 @@ export interface ProjectI {
   status: ProjectStatus;
   banner?: string;
   deadline?: Date | null;
-  progress: number;
+  progress?: number;
   participation?: ProjectParticipationI[];
   createdAt?: Date;
   updatedAt?: Date;

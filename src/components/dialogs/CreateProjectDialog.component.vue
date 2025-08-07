@@ -147,22 +147,23 @@
 </template>
 
 <script lang="ts">
-import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
+import { RolesValues } from 'src/enums/roles.enum';
 import { ProjectCreateI, ProjectMemberI } from 'src/models/project.model';
-import { clone, fileToBase64, toBase64 } from 'src/utils/transform';
+import { clone } from 'src/utils/transform';
 import { computed, onMounted, ref } from 'vue';
-import { required, validateEmail, validateSelect } from '../../utils/validation';
+import { required, validateSelect } from '../../utils/validation';
 import { QForm, useQuasar } from 'quasar';
-import { ResponseI } from 'src/models/response.model';
 import ProjectService from 'src/services/project.service';
 import UserService from 'src/services/user.service';
 import { UserBasicI } from 'src/models/user.model';
+import { useApi } from 'src/services/useApi';
 
 export default {
   emits: ['close'],
   setup(props, { emit }) {
     const $q = useQuasar();
     const form = ref<QForm>(null);
+    const { handleApi } = useApi();
 
     const projectCreateData = ref<ProjectCreateI>({
       name: '',
@@ -220,79 +221,54 @@ export default {
     }
 
     async function addProject(): Promise<void> {
-      try {
-        const isValid: boolean = await form.value.validate();
+      const isValid: boolean = await form.value.validate();
 
-        if (isValid) {
-          $q.loading.show();
-          const formData: FormData = new FormData();
-          formData.append('project', JSON.stringify(projectCreateData.value));
-          if (bannerFile.value) {
-            formData.append('banner', bannerFile.value);
-          }
-
-          const response: ResponseI = await ProjectService.create(formData);
-
-          if (!response.success) {
-            throw Error(response.message);
-          }
-          $q.loading.hide();
-          $q.notify({
-            type: 'positive',
-            message: 'Projeto criado com successo!',
-          });
-
-          //limpar formulário
-          projectCreateData.value = {
-            name: '',
-            deadline: '',
-            description: '',
-            members: [],
-          };
-          bannerFile.value = null;
-          projectCreateMemberData.value = {
-            id: null,
-            role: 2,
-          };
-
-          //fechar popup
-          emit('close');
-        } else {
-          $q.notify({
-            type: 'negative',
-            message: 'Corrija os erros no formulário',
-          });
+      if (isValid) {
+        const formData: FormData = new FormData();
+        formData.append('project', JSON.stringify(projectCreateData.value));
+        if (bannerFile.value) {
+          formData.append('banner', bannerFile.value);
         }
-      } catch (error) {
-        $q.loading.hide();
-        console.error('Erro na validação:', error.message);
+
+        await handleApi(() => ProjectService.create(formData), {
+          successMessage: 'Projeto criado com sucesso!',
+          errorMessage: 'Ocorreu um erro ao criar o projeto.',
+        });
+
+        //limpar formulário
+        projectCreateData.value = {
+          name: '',
+          deadline: '',
+          description: '',
+          members: [],
+        };
+        bannerFile.value = null;
+        projectCreateMemberData.value = {
+          id: null,
+          role: 2,
+        };
+
+        //fechar popup
+        emit('close');
+      } else {
         $q.notify({
           type: 'negative',
-          message: error.message || 'Ocorreu um erro ao validar o formulário',
+          message: 'Corrija os erros no formulário',
         });
       }
     }
 
     async function getUserList(): Promise<void> {
-      try {
-        const response: ResponseI = await UserService.getBasicUserList();
+      const data = await handleApi<UserBasicI[]>(() => UserService.getBasicUserList(), {
+        errorMessage: 'Ocorreu um erro ao buscar lista de usuários.',
+      });
 
-        if (!response.success) {
-          throw Error(response.message);
-        }
-        usersList.value = response.data;
-        userListClone.value = response.data;
+      usersList.value = data;
+      userListClone.value = data;
 
-        usersList.value.forEach((userBasic) => {
-          userBasic.initials = userBasic.username.substring(0, 2).toUpperCase();
-        });
-      } catch (error) {
-        console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: 'Ocorreu um erro ao buscar lista de usuários.',
-        });
-      }
+      usersList.value.forEach((userBasic) => {
+        userBasic.initials = userBasic.username.substring(0, 2).toUpperCase();
+      });
     }
 
     function filterUser(val: string, update: (callbackFn: () => void) => void): void {

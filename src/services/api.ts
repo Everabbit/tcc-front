@@ -20,6 +20,15 @@ export function setHttpToken(token: string | null): void {
   }
 }
 
+export function getHttpToken(): string | null {
+  return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function removeHttpToken(): void {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  delete api.defaults.headers.common['Authorization'];
+}
+
 const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
 if (storedToken) {
   setHttpToken(storedToken);

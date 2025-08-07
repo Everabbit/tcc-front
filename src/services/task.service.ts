@@ -60,13 +60,9 @@ export default class TaskService {
     }
   }
 
-  static async getAll(versionId: number): Promise<ResponseI> {
+  static async getAll(versionId: number | null = null): Promise<ResponseI> {
     try {
-      if (!versionId) {
-        throw Error('Informe um ID de projeto válido!');
-      }
-
-      const response: AxiosResponse = await api.get(`/tasks/getall/${versionId}`);
+      const response: AxiosResponse = await api.get(`/tasks/getall/${versionId ? versionId : '0'}`);
 
       if (response.status === 200) {
         return response.data;
@@ -179,6 +175,27 @@ export default class TaskService {
       }
 
       const response: AxiosResponse = await api.put(`/tasks/updatecomment`, comment);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+  static async deleteAttachment(attachmentId: number): Promise<ResponseI> {
+    try {
+      if (!attachmentId) {
+        throw Error('Informe um ID de anexo válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/tasks/removeattachment/${attachmentId}`);
 
       if (response.status === 200) {
         return response.data;

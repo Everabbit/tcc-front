@@ -48,6 +48,23 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/TasksPage.vue'),
         name: 'Tarefas',
         props: true,
+        meta: {
+          button: true,
+          label: 'Nova Tarefa',
+          icon: 'mdi-plus',
+          emitt: 'open-task-dialog',
+        },
+      },
+      {
+        path: 'minhas_tarefas',
+        component: () => import('pages/MyTasksPage.vue'),
+        name: 'Minhas Tarefas',
+        meta: {
+          button: true,
+          label: 'Nova Tarefa',
+          icon: 'mdi-plus',
+          emitt: 'open-task-dialog',
+        },
       },
     ],
   },

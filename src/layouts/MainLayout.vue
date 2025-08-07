@@ -104,6 +104,7 @@ import { HeaderButtonI } from 'src/models/extra.model';
 import { menuBasicList, MenuBasicListI } from 'src/models/menu_list.model';
 import { ResponseI } from 'src/models/response.model';
 import { UserBasicI } from 'src/models/user.model';
+import { useApi } from 'src/services/useApi';
 import UserService from 'src/services/user.service';
 import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
@@ -116,6 +117,7 @@ export default {
   setup() {
     const $q = useQuasar();
     const router = useRouter();
+    const { handleApi } = useApi();
     const leftDrawerOpen = ref(false);
 
     const userBasic = ref<UserBasicI>({
@@ -133,28 +135,16 @@ export default {
     }
 
     async function getBasicInfo(): Promise<void> {
-      try {
-        const userResponse: UserBasicI = await getUserBasicInfo();
+      const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
+        errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
+      });
 
-        if (!userResponse) {
-          const response: ResponseI = await UserService.getBasicUser();
-          if (!response.success) {
-            throw Error(response.message);
-          }
-
-          userBasic.value = response.data;
-          userBasic.value.initials = getUsernameInitials(userBasic.value.username);
-          setUserBasicInfo(userBasic.value);
-        } else {
-          userBasic.value = userResponse;
-        }
-      } catch (error) {
-        console.error('Erro:', error);
+      if (userResponse) {
+        userBasic.value = userResponse;
+        userBasic.value.initials = getUsernameInitials(userBasic.value.username);
+        setUserBasicInfo(userBasic.value);
+      } else {
         router.push('/');
-        $q.notify({
-          type: 'negative',
-          message: 'Ocorreu um erro ao buscar informações do usuário',
-        });
       }
     }
 

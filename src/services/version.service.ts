@@ -25,7 +25,7 @@ export default class VersionService {
     }
   }
 
-  static async update(id: string, version: FormData): Promise<ResponseI> {
+  static async update(id: number, version: FormData): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
@@ -50,7 +50,7 @@ export default class VersionService {
     }
   }
 
-  static async delete(id: string): Promise<ResponseI> {
+  static async delete(id: number): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
@@ -72,7 +72,7 @@ export default class VersionService {
     }
   }
 
-  static async getAll(projectId: string): Promise<ResponseI> {
+  static async getAll(projectId: number): Promise<ResponseI> {
     try {
       if (!projectId) {
         throw Error('Informe um ID de projeto válido!');
@@ -94,7 +94,7 @@ export default class VersionService {
     }
   }
 
-  static async getOne(id: string, projectId: string): Promise<ResponseI> {
+  static async getOne(id: number, projectId: number): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um ID de versão válido!');
