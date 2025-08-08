@@ -147,15 +147,16 @@ import {
 import type { UserRegisterI } from 'src/models/user.model';
 import { ref } from 'vue';
 import UserService from 'src/services/user.service';
-import { setHttpToken } from 'src/services/api';
 import { clone } from 'src/utils/transform';
 import { useRouter } from 'vue-router';
 import { useApi } from 'src/services/useApi';
+import { useAuthStore } from 'src/stores/authStore';
 
 export default {
   setup() {
     const $q = useQuasar();
     const router = useRouter();
+    const authStore = useAuthStore();
     const { handleApi } = useApi();
     const form = ref<QForm>(null);
     const user = ref<UserRegisterI>({
@@ -178,7 +179,7 @@ export default {
           errorMessage: 'Ocorreu um erro ao criar a conta.',
         });
         const token: string = data;
-        setHttpToken(token);
+        authStore.setToken(token);
         router.push('/p/dashboard');
       } else {
         checkVerify.value = true;

@@ -1,6 +1,12 @@
 import type { ResponseI } from 'src/models/response.model';
 import api from './api';
-import { UserLoginI, UserRegisterI } from 'src/models/user.model';
+import {
+  PasswordChangeI,
+  UserI,
+  UserLoginI,
+  UserPreferencesI,
+  UserRegisterI,
+} from 'src/models/user.model';
 import { AxiosResponse } from 'axios';
 import { toBase64 } from 'src/utils/transform';
 
@@ -56,6 +62,124 @@ export default class UserService {
     }
   }
 
+  static async update(user: UserI): Promise<ResponseI> {
+    try {
+      if (!user) {
+        throw Error('Informe um usuário válido!');
+      }
+
+      if (user.email) {
+        user.email = toBase64(user.email);
+      }
+      if (user.fullName) {
+        user.fullName = toBase64(user.fullName);
+      }
+      if (user.username) {
+        user.username = toBase64(user.username);
+      }
+
+      const response: AxiosResponse = await api.put(`/users/update`, user);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async delete(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.delete(`/users/delete`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async updatePassword(password: PasswordChangeI): Promise<ResponseI> {
+    try {
+      if (!password) {
+        throw Error('Informe uma senha válida!');
+      }
+
+      password.currentPassword = toBase64(password.currentPassword);
+      password.newPassword = toBase64(password.newPassword);
+      password.newPasswordConfirm = toBase64(password.newPasswordConfirm);
+
+      const response: AxiosResponse = await api.put(`/users/updatepassword`, {
+        password,
+      });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async updatePreferences(preferences: UserPreferencesI): Promise<ResponseI> {
+    try {
+      if (!preferences) {
+        throw Error('Informe preferências válidas!');
+      }
+
+      const response: AxiosResponse = await api.put(`/users/updatepreferences`, preferences);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async getPreferences(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.get(`/users/preferences`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async validateToken(): Promise<ResponseI> {
     try {
       const response: AxiosResponse = await api.get(`/users/validateToken`);
@@ -68,6 +192,68 @@ export default class UserService {
     } catch (err: any) {
       const response: ResponseI = {
         message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async getUserConfig(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.get(`/users/settings`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async updateImage(image: FormData): Promise<ResponseI> {
+    try {
+      if (!image) {
+        throw Error('Informe uma imagem válida!');
+      }
+
+      const response: AxiosResponse = await api.put(`/users/updateimage`, image, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async removeImage(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.delete(`/users/removeimage`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
         success: false,
       };
       return response;

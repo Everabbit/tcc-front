@@ -44,7 +44,7 @@
           </q-item-section>
 
           <!-- Botões de Ação -->
-          <q-item-section v-if="user.id === comment.authorId && !editingComment" side>
+          <q-item-section v-if="authStore.user.id === comment.authorId && !editingComment" side>
             <q-btn flat dense round icon="mdi-dots-vertical">
               <q-menu anchor="bottom right" self="top right">
                 <q-list dense style="min-width: 100px">
@@ -88,7 +88,7 @@ import { CommentI } from 'src/models/comment.model';
 import { UserBasicI } from 'src/models/user.model';
 import TaskService from 'src/services/task.service';
 import { useApi } from 'src/services/useApi';
-import { getUserBasicInfo } from 'src/utils/user.utils';
+import { useAuthStore } from 'src/stores/authStore';
 import { getUsernameInitials } from 'src/utils/utils';
 import { PropType, ref } from 'vue';
 
@@ -111,7 +111,7 @@ export default {
   setup(props, { emit }) {
     const $q = useQuasar();
     const { handleApi } = useApi();
-    const user = ref<UserBasicI>(getUserBasicInfo());
+    const authStore = useAuthStore();
     const newCommentText = ref<string>('');
     const editingComment = ref<CommentI | null>(null);
     const editedCommentContent = ref<string>('');
@@ -169,11 +169,11 @@ export default {
       const newComment: CommentI = {
         id: 0,
         taskId: props.taskId,
-        authorId: user.value.id,
+        authorId: authStore.user.id,
         content: newCommentText.value,
         createdAt: new Date(),
         edited: false,
-        author: user.value,
+        author: authStore.user,
         updatedAt: undefined,
       };
       if (props.isEditing) {
@@ -196,7 +196,7 @@ export default {
       saveEditedComment,
       addComment,
       removeComment,
-      user,
+      authStore,
     };
   },
 };

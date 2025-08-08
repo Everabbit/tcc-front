@@ -103,7 +103,7 @@
               <q-input
                 v-if="isMyTasks"
                 label="Responsável"
-                :model-value="user.username"
+                :model-value="authStore.user.username"
                 outlined
                 readonly
                 disable
@@ -234,7 +234,7 @@
                       <q-icon name="mdi-calendar-arrow-right" color="grey-7" />
                     </q-item-section>
                     <q-item-section>
-                      <q-item-label caption>Iniciada em</q-item-label>
+                      <q-item-label caption>Atualizada em</q-item-label>
                       <q-item-label>{{
                         new Date(editedTask.updatedAt).toLocaleDateString()
                       }}</q-item-label>
@@ -277,12 +277,12 @@ import { TagI } from 'src/models/tag.model';
 import TagService from 'src/services/tag.service';
 import { TaskTagI } from 'src/models/task_tag.model';
 import { UserBasicI } from 'src/models/user.model';
-import { getUserBasicInfo } from 'src/utils/user.utils';
 import { VersionI } from 'src/models/version.model';
 import { useApi } from 'src/services/useApi';
 import VersionService from 'src/services/version.service';
 import TaskAttachmentsComponent from '../lists/TaskAttachments.component.vue';
 import TaskCommentsComponent from '../lists/TaskComments.component.vue';
+import { useAuthStore } from 'src/stores/authStore';
 
 export default defineComponent({
   props: {
@@ -321,7 +321,7 @@ export default defineComponent({
     const projectSelectId = ref<number | null>(null);
     const versionSelectId = ref<number | null>(null);
 
-    const user = ref<UserBasicI>(getUserBasicInfo());
+    const authStore = useAuthStore();
 
     const defaultTask: TaskI = {
       id: null,
@@ -516,7 +516,7 @@ export default defineComponent({
       updateTaskTags();
       editedTask.value.versionId = versionSelectId.value;
       if (isMyTasks.value) {
-        editedTask.value.assigneeId = user.value.id;
+        editedTask.value.assigneeId = authStore.user.id;
       }
 
       const formData = buildFormData();
@@ -562,7 +562,6 @@ export default defineComponent({
       getContrastColor,
       availableTags,
       selectedTags,
-      user,
       isMyTasks,
       projects,
       fetchVersions,
@@ -571,6 +570,7 @@ export default defineComponent({
       versions,
       updateAttachments,
       fetchTask,
+      authStore,
     };
   },
 });

@@ -22,7 +22,11 @@
               label="Cor"
               :style="
                 '--text-color: ' +
-                getContrastColor(newTag.color) +
+                (newTag.color
+                  ? getContrastColor(newTag.color)
+                  : $q.dark.isActive
+                    ? 'white'
+                    : 'black') +
                 '; background-color: ' +
                 newTag.color
               "

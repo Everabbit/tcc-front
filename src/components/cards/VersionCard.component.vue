@@ -36,23 +36,23 @@
       </div>
 
       <div class="version-meta flex q-gutter-sm q-mb-sm">
-        <div v-if="version.startDate" class="text-caption text-grey">
+        <div v-if="version.startDate" class="text-caption">
           <q-icon name="mdi-calendar" size="16px" class="q-mr-sm" />
           <span>Inicio: {{ formatDate(version.startDate) }}</span>
         </div>
-        <div v-if="version.endDate" class="text-caption text-grey">
+        <div v-if="version.endDate" class="text-caption">
           <q-icon name="mdi-calendar" size="16px" class="q-mr-sm" />
           <span>Prazo: {{ formatDate(version.endDate) }}</span>
         </div>
-        <div v-if="version.githubBranch" class="text-caption text-grey">
+        <div v-if="version.githubBranch" class="text-caption">
           <q-icon name="mdi-github" size="16px" class="q-mr-sm" />
           <span>Branch: {{ version.githubBranch }}</span>
         </div>
       </div>
       <div>
         <div class="version-progress q-mb-xs">
-          <span class="text-caption text-grey">Progresso:</span
-          ><span class="text-caption text-grey">{{ percentTasks * 100 }}%</span>
+          <span class="text-caption">Progresso:</span
+          ><span class="text-caption">{{ percentTasks * 100 }}%</span>
         </div>
         <q-linear-progress rounded :value="percentTasks" color="primary" size="6px" />
       </div>
@@ -148,7 +148,6 @@ export default {
 }
 
 .version-description {
-  color: #aaa;
   font-size: 0.9rem;
   margin-bottom: 15px;
   line-height: 1.4;
@@ -166,7 +165,6 @@ export default {
 }
 
 .version-footer {
-  color: #aaa;
   font-size: 0.9rem;
 }
 </style>

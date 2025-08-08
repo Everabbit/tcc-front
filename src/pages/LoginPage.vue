@@ -84,7 +84,7 @@
           <q-card-section class="flex justify-center q-py-md">
             <q-avatar size="80px" color="primary" text-color="white" class="q-mr-sm">
               <img v-if="userBasic.image" :src="userBasic.image" />
-              <span v-else>{{ userBasic.initials }}</span>
+              <span v-else>{{ getUsernameInitials(userBasic.username) }}</span>
             </q-avatar>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
@@ -141,16 +141,16 @@ import type { UserBasicI, UserLoginI } from 'src/models/user.model';
 import { onMounted, ref } from 'vue';
 import UserService from 'src/services/user.service';
 import { clone } from 'src/utils/transform';
-import { getHttpToken, removeHttpToken, setHttpToken } from 'src/services/api';
 import { useRouter } from 'vue-router';
 import { getUsernameInitials } from 'src/utils/utils';
-import { getUserBasicInfo, setUserBasicInfo } from 'src/utils/user.utils';
 import { useApi } from 'src/services/useApi';
+import { useAuthStore } from 'src/stores/authStore';
 
 export default {
   setup() {
     const $q = useQuasar();
     const router = useRouter();
+    const authStore = useAuthStore();
     const { handleApi } = useApi();
     const form = ref<QForm>(null);
     const user = ref<UserLoginI>({
@@ -174,15 +174,13 @@ export default {
 
         const token: string = response;
 
-        setHttpToken(token);
+        authStore.setToken(token);
 
         const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
           errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
         });
 
         userBasic.value = userResponse;
-        userBasic.value.initials = getUsernameInitials(userBasic.value.username);
-        setUserBasicInfo(userBasic.value);
         logged.value = true;
 
         router.push('/p/dashboard');
@@ -194,35 +192,15 @@ export default {
       }
     }
 
-    async function logoutAccount(): Promise<void> {
-      try {
-        setHttpToken('');
-
-        logged.value = false;
-      } catch (error) {
-        console.error('Erro:', error);
-        $q.notify({
-          type: 'negative',
-          message: 'Ocorreu um erro ao deslogar do sistema',
-        });
-      }
+    function logoutAccount(): void {
+      authStore.logout();
     }
 
     async function getBasicInfo(): Promise<void> {
-      if (getHttpToken()) {
-        const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
-          errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
-        });
-
-        if (userResponse) {
-          userBasic.value = userResponse;
-          userBasic.value.initials = getUsernameInitials(userBasic.value.username);
-          setUserBasicInfo(userBasic.value);
-          logged.value = true;
-        } else {
-          logged.value = false;
-          removeHttpToken();
-        }
+      if (authStore.token) {
+        authStore.fetchUser();
+        userBasic.value = authStore.getUser;
+        logged.value = true;
       }
     }
 
@@ -242,6 +220,7 @@ export default {
       logged,
       userBasic,
       logoutAccount,
+      getUsernameInitials,
     };
   },
 };

@@ -6,6 +6,18 @@ export interface UserI {
   username?: string | null;
   lastAcess?: Date | null;
   image?: string | null;
+  userPreferences?: UserPreferencesI;
+}
+
+export interface UserPreferencesI {
+  id?: number;
+  userId?: number;
+  user?: UserI;
+  theme?: string;
+  darkMode?: boolean;
+  notifyEnabled?: boolean;
+  notifyEmail?: boolean;
+  notifyPush?: boolean;
 }
 
 export interface UserRegisterI {
@@ -26,5 +38,11 @@ export interface UserBasicI {
   email?: string;
   image?: string;
   username?: string;
-  initials?: string;
+  userPreferences?: UserPreferencesI;
+}
+
+export interface PasswordChangeI {
+  currentPassword: string;
+  newPassword: string;
+  newPasswordConfirm: string;
 }

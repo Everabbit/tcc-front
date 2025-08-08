@@ -62,7 +62,9 @@ export default {
 
 <style lang="scss" scoped>
 .kanban-column {
-  background-color: $grey-2;
+  background-color: $grey-1;
+  border: 1px solid;
+  border-color: $grey-5;
   border-radius: 8px;
   padding: 8px;
   display: flex;
@@ -70,6 +72,7 @@ export default {
 
   .body--dark & {
     background-color: $grey-10;
+    border: 0px solid;
   }
 
   @media (max-width: 1920px) {

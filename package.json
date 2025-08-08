@@ -17,6 +17,7 @@
     "@quasar/extras": "^1.16.17",
     "axios": "^1.8.4",
     "mitt": "^3.0.1",
+    "pinia": "^3.0.3",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
     "vue-material-design-icons": "^5.3.1",

@@ -23,8 +23,9 @@ export const validateSelect = (val) => {
 export const minLength = (fieldName, length) => (val) =>
   (val && val.length >= length) || `${fieldName} deve ter pelo menos ${length} caracteres`;
 
-export const passwordMatch = (password, confirmPassword) => () =>
-  password === confirmPassword || 'As senhas não coincidem';
+export const passwordMatch = (password, confirmPassword) => () => {
+  return password === confirmPassword || 'As senhas não coincidem';
+};
 
 export const checkboxRequired = (val) =>
   val === true || 'Você deve aceitar os termos para continuar';

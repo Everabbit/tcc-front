@@ -128,7 +128,6 @@ export default {
         id: user.id,
         username: user.username,
         image: user.username,
-        initials: user.initials,
         role: memberData.value.role,
       };
 
@@ -174,10 +173,6 @@ export default {
 
       usersList.value = data;
       userListClone.value = data;
-
-      usersList.value.forEach((userBasic) => {
-        userBasic.initials = userBasic.username.substring(0, 2).toUpperCase();
-      });
     }
 
     function filterUser(val: string, update: (callbackFn: () => void) => void): void {

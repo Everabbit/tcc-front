@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row justify-center items-start q-pa-md" style="min-height: 0px">
+  <q-page class="row justify-center content-start q-pa-md">
     <q-dialog persistent v-model="showDialog">
       <CreateProjectDialog v-if="showDialog" @close="closeDialog"></CreateProjectDialog>
     </q-dialog>
@@ -201,7 +201,7 @@ export default {
 }
 
 .new-project-card:hover {
-  border-color: #007bff;
+  border-color: var(--q-primary);
   background: rgba(0, 123, 255, 0.05);
 }
 
@@ -210,6 +210,6 @@ export default {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: #007bff;
+  color: var(--q-primary);
 }
 </style>

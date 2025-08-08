@@ -4,14 +4,16 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: () => import('layouts/AuthLayout.vue'),
+    meta: { requiresAuth: false },
     children: [
-      { path: 'registro', component: () => import('pages/RegisterPage.vue') },
-      { path: '', component: () => import('pages/LoginPage.vue') },
+      { path: 'registro', name: 'register', component: () => import('pages/RegisterPage.vue') },
+      { path: '', name: 'login', component: () => import('pages/LoginPage.vue') },
     ],
   },
   {
     path: '/p',
     component: () => import('layouts/MainLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       { path: 'dashboard', component: () => import('pages/IndexPage.vue'), name: 'Dashboard' },
       {
@@ -65,6 +67,11 @@ const routes: RouteRecordRaw[] = [
           icon: 'mdi-plus',
           emitt: 'open-task-dialog',
         },
+      },
+      {
+        path: 'configuracoes',
+        component: () => import('pages/SettingsPage.vue'),
+        name: 'Configurações',
       },
     ],
   },

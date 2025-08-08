@@ -1,19 +1,18 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <!-- Toolbar superior -->
-    <q-header elevated class="bg-dark text-grey-8">
+    <q-header elevated :class="$q.dark.isActive ? 'bg-dark' : 'bg-white text-grey-10'">
       <q-toolbar style="min-height: 56px">
         <q-btn
           flat
           dense
           round
-          color="white"
           @click="leftDrawerOpen = !leftDrawerOpen"
           aria-label="Menu"
           icon="mdi-menu"
         />
 
-        <q-toolbar-title class="q-py-sm text-white"> {{ $route.name }} </q-toolbar-title>
+        <q-toolbar-title class="q-py-sm"> {{ $route.name }} </q-toolbar-title>
         <q-space />
         <q-btn
           v-if="button.button"
@@ -31,7 +30,7 @@
 
     <!-- Drawer esquerdo -->
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered :width="250" class="text-white">
+    <q-drawer v-model="leftDrawerOpen" show-if-above bordered :width="250">
       <!-- Logo e Cabeçalho -->
       <q-scroll-area class="fit">
         <div class="q-pa-sm q-mb-md">
@@ -63,8 +62,8 @@
                 v-ripple
                 exact
                 class="q-mb-xs"
-                :class="{ 'active-menu-item': $route.path.indexOf(item.link) > 0 }"
-                :to="item.link"
+                :class="$route.path.indexOf(item.link) !== -1 ? 'active-menu-item' : ''"
+                @click="goToRoute(item.link)"
               >
                 <q-item-section avatar>
                   <q-icon :name="item.icon" />
@@ -76,16 +75,22 @@
         </div>
 
         <!-- Rodapé com Perfil do Usuário -->
-        <div class="sidebar-footer absolute-bottom q-pa-md">
-          <q-item class="user-profile row items-center q-pa-none">
+        <div class="sidebar-footer absolute-bottom q-pa-sm">
+          <q-item
+            v-if="authStore.user"
+            clickable
+            class="user-profile row items-center"
+            @click="goToRoute('/p/configuracoes')"
+            :class="{ 'active-menu-item': $route.path.indexOf('configuracoes') > 0 }"
+          >
             <q-avatar size="40px" color="primary" text-color="white" class="q-mr-sm">
-              <img v-if="userBasic.image" :src="userBasic.image" />
-              <span v-else>{{ userBasic.initials }}</span>
+              <img v-if="authStore.user.image" :src="authStore.user.image" />
+              <span v-else>{{ getUsernameInitials(authStore.user.username) }}</span>
             </q-avatar>
             <div class="col self-stretch column justify-center">
-              <div class="text-weight-medium text-truncate">{{ userBasic.fullName }}</div>
-              <small class="text-grey-5 text-truncate">
-                {{ userBasic.username || userBasic.email }}
+              <div class="text-weight-medium text-truncate">{{ authStore.user.fullName }}</div>
+              <small :class="$q.dark.isActive ? 'text-grey-5' : 'text-grey-9' + ' text-truncate'">
+                {{ authStore.user.username || authStore.user.email }}
               </small>
             </div>
           </q-item>
@@ -99,30 +104,21 @@
 </template>
 
 <script lang="ts">
-import { useQuasar } from 'quasar';
 import { HeaderButtonI } from 'src/models/extra.model';
 import { menuBasicList, MenuBasicListI } from 'src/models/menu_list.model';
-import { ResponseI } from 'src/models/response.model';
-import { UserBasicI } from 'src/models/user.model';
 import { useApi } from 'src/services/useApi';
-import UserService from 'src/services/user.service';
+import { useAuthStore } from 'src/stores/authStore';
 import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
-import { getUserBasicInfo, setUserBasicInfo } from 'src/utils/user.utils';
 import { getUsernameInitials } from 'src/utils/utils';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 export default {
   setup() {
-    const $q = useQuasar();
+    const authStore = useAuthStore();
     const router = useRouter();
-    const { handleApi } = useApi();
     const leftDrawerOpen = ref(false);
-
-    const userBasic = ref<UserBasicI>({
-      id: 0,
-    });
 
     const button = computed<HeaderButtonI | null>((): HeaderButtonI | null => {
       const button: HeaderButtonI = clone(router.currentRoute.value.meta);
@@ -134,42 +130,39 @@ export default {
       emitter.emit(button.value.emitt);
     }
 
-    async function getBasicInfo(): Promise<void> {
-      const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
-        errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
-      });
-
-      if (userResponse) {
-        userBasic.value = userResponse;
-        userBasic.value.initials = getUsernameInitials(userBasic.value.username);
-        setUserBasicInfo(userBasic.value);
-      } else {
-        router.push('/');
-      }
+    function goToRoute(route: string): void {
+      router.push(route);
     }
 
-    onMounted(async () => {
-      await getBasicInfo();
-    });
-    return { leftDrawerOpen, userBasic, menuList, button, clickButton };
+    return {
+      leftDrawerOpen,
+      authStore,
+      menuList,
+      button,
+      clickButton,
+      goToRoute,
+      getUsernameInitials,
+    };
   },
 };
 </script>
 
-<style lang="css">
+<style lang="scss">
 .active-menu-item {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(109, 109, 109, 0.178);
   border-radius: 8px;
+
+  .q-item__section {
+    color: var(--q-primary);
+  }
 }
 
-/* Estilo específico para o botão Novo Projeto */
 .new-project-btn {
   border-radius: var(--border-radius);
   transition: all 0.3s;
 }
 
 .new-project-btn:hover {
-  background: var(--light-blue);
   transform: translateY(-2px);
 }
 

@@ -9,7 +9,7 @@
       <div class="text-subtitle2 text-bold q-mb-sm">
         {{ task.title }}
       </div>
-      <p class="task-description text-grey-5 q-my-none" v-if="task.description">
+      <p class="task-description q-my-none" v-if="task.description">
         {{ task.description }}
       </p>
       <div class="q-my-none">
@@ -39,8 +39,11 @@
         </div>
         <q-space v-else />
         <div class="task-footer" v-if="task.assignee">
-          <q-avatar size="24px" color="primary" text-color="white"
-            >{{ getUsernameInitials(task.assignee.username) }}
+          <q-avatar size="24px" color="primary" text-color="white">
+            <q-img v-if="task.assignee.image" :src="task.assignee.image"></q-img>
+            <span v-else>
+              {{ getUsernameInitials(task.assignee.username) }}
+            </span>
             <q-tooltip
               class="bg-primary text-body2"
               position="top"
