@@ -95,30 +95,6 @@ export const useSettingsStore = defineStore('settings', {
       }
     },
 
-    async updateNotifications(preferences: UserPreferencesI) {
-      if (!this.settings) return;
-
-      this.settings.notifyEnabled = preferences.notifyEnabled;
-      this.settings.notifyEmail = preferences.notifyEmail;
-      this.settings.notifyPush = preferences.notifyPush;
-
-      try {
-        const response = await UserService.updatePreferences(preferences);
-        if (!response.success) throw new Error(response.message);
-
-        Notify.create({
-          type: 'positive',
-          message: 'Preferências de notificação salvas com sucesso.',
-        });
-        this.fetchAndApplySettings();
-      } catch (error) {
-        Notify.create({
-          type: 'negative',
-          message: 'Falha ao salvar as preferências de notificação.',
-        });
-      }
-    },
-
     clearSettings() {
       this.settings = {
         darkMode: true,

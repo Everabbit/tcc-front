@@ -1,10 +1,9 @@
 export enum TaskStatusEnum {
   PENDING = 1, // Aguardando início
   IN_PROGRESS = 2, // Em andamento
-  BLOCKED = 3, // Travada por algum motivo
-  REVIEW = 4, // Em revisão
-  DONE = 5, // Finalizada
-  CANCELED = 6, // Cancelada
+  REVIEW = 3, // Em revisão
+  DONE = 4, // Finalizada
+  CANCELED = 5, // Cancelada
 }
 
 export enum VersionStatusEnum {
@@ -63,17 +62,12 @@ export const TaskStatus = [
   },
   {
     id: TaskStatusEnum.IN_PROGRESS,
-    name: 'Em progresso',
+    name: 'Em andamento',
     color: 'blue',
   },
   {
-    id: TaskStatusEnum.BLOCKED,
-    name: 'Bloqueada',
-    color: 'negative',
-  },
-  {
     id: TaskStatusEnum.REVIEW,
-    name: 'Em revisão',
+    name: 'Em testes',
     color: 'amber',
   },
   {

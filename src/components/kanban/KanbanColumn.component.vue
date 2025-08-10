@@ -76,7 +76,7 @@ export default {
   }
 
   @media (max-width: 1920px) {
-    flex: 0 0 calc(16.7% - 16px);
+    flex: 0 0 calc(20% - 16px);
   }
 
   @media (max-width: 1700px) {

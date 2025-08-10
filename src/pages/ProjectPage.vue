@@ -1,6 +1,6 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md">
-    <q-dialog persistent v-model="showDialogVersion">
+    <q-dialog v-model="showDialogVersion" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <CreateVersionDialog
         @close="createVersion"
         :project-id="idParse"
@@ -8,14 +8,14 @@
         v-if="showDialogVersion"
       ></CreateVersionDialog>
     </q-dialog>
-    <q-dialog persistent v-model="showDialogMembers">
+    <q-dialog v-model="showDialogMembers" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <AddMemberDialogCompoent
         @close="addmembersDialog"
         :project-id="idParse"
         v-if="showDialogMembers"
       ></AddMemberDialogCompoent>
     </q-dialog>
-    <q-dialog persistent v-model="showDialogTags">
+    <q-dialog v-model="showDialogTags" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <AddTagDialogComponent
         @close="addTagDialog"
         :project-id="idParse"
@@ -23,7 +23,7 @@
         v-if="showDialogTags"
       ></AddTagDialogComponent>
     </q-dialog>
-    <div class="col-12 col-md-10 col-lg-9 q-mb-md">
+    <div class="col-12 col-md-10 col-lg-9" :style="$q.screen.xs ? `margin-bottom: 50px` : ''">
       <div class="q-mb-md">
         <q-btn flat round icon="arrow_back" @click="$router.back()" />
         <span class="text-h5 q-ml-sm">{{ project.name }}</span>
@@ -109,12 +109,12 @@
                   :model-value="formatDate(project.createdAt)"
                   readonly
                   outlined
-                  class="q-mb-md"
+                  :class="$q.screen.xs ? '' : 'q-mb-md'"
                 />
               </div>
               <div class="col-12 col-md-6">
                 <!-- Prazo -->
-                <div class="q-mb-md">
+                <div :class="$q.screen.xs ? '' : 'q-mb-md'">
                   <q-input
                     label="Prazo do Projeto"
                     v-model="formattedData"
@@ -144,21 +144,23 @@
                 </div>
 
                 <!-- Progresso -->
-                <div class="text-caption text-grey q-mt-md">Progresso</div>
+                <div :class="'text-caption text-grey ' + $q.screen.xs ? '' : 'q-mt-md'">
+                  Progresso
+                </div>
                 <div class="row">
-                  <div class="col-11 q-py-sm">
-                    <q-linear-progress :value="project.progress / 100" color="primary" />
+                  <div class="col-grow q-py-sm">
+                    <q-linear-progress :value="project.progress" color="primary" />
                   </div>
 
                   <div class="q-ml-sm">
-                    <span>{{ project.progress }}%</span>
+                    <span>{{ project.progress * 100 }}%</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Descrição -->
-            <div>
+            <div :class="$q.screen.xs ? 'q-mt-md' : ''">
               <q-input
                 label="Descrição (Opcional)"
                 v-model="project.description"
@@ -181,7 +183,7 @@
             <q-btn
               color="primary"
               icon="add"
-              label="Adicionar Etiqueta"
+              :label="$q.screen.xs ? '' : 'Adicionar Etiqueta'"
               flat
               @click="addTagDialog()"
             />
@@ -220,7 +222,7 @@
             <q-btn
               color="primary"
               icon="add"
-              label="Adicionar Membro"
+              :label="$q.screen.xs ? '' : 'Adicionar Membro'"
               flat
               @click="addmembersDialog"
             />
@@ -275,7 +277,7 @@
               <q-btn
                 color="primary"
                 icon="mdi-plus"
-                label="Nova Versão"
+                :label="$q.screen.xs ? '' : 'Nova Versão'"
                 flat
                 @click="createVersion()"
               />
@@ -320,7 +322,7 @@
                   <div class="text-center">
                     <span> {{ getPercentVersionTasks(version.id) * 100 }}% </span>
                   </div>
-                  <q-linear-progress :value="getPercentVersionTasks(version.id)" color="accent" />
+                  <q-linear-progress :value="getPercentVersionTasks(version.id)" color="primary" />
                 </td>
                 <td class="text-right">
                   <q-btn flat dense icon="mdi-pencil" @click.stop="createVersion(version.id)" />
@@ -713,7 +715,7 @@ export default {
 
 <style scoped>
 .card-project {
-  border-left: 4px solid var(--primary-color);
+  border-left: 4px solid var(--q-primary);
 }
 
 .project-banner {

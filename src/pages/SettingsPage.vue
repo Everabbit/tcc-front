@@ -1,6 +1,10 @@
 <template>
   <q-page padding>
-    <q-dialog v-model="showConfirmDeleteDialog" persistent>
+    <q-dialog
+      v-model="showConfirmDeleteDialog"
+      persistent
+      :position="$q.screen.xs ? 'bottom' : 'standard'"
+    >
       <q-card style="width: 400px">
         <q-card-section class="row items-center">
           <q-avatar icon="mdi-alert-outline" color="negative" text-color="white" />
@@ -26,7 +30,7 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="showColorDialog">
+    <q-dialog v-model="showColorDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <q-card style="width: 350px">
         <q-card-section>
           <div class="text-h6">Escolha uma cor para o tema</div>
@@ -53,7 +57,7 @@
       </q-card>
     </q-dialog>
 
-    <q-dialog v-model="showChangePasswordDialog">
+    <q-dialog v-model="showChangePasswordDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <q-card style="width: 400px">
         <q-card-section>
           <div class="text-h6">Alterar Senha</div>
@@ -130,7 +134,8 @@
                   @update:model-value="handleAvatarUpload"
                 />
                 <q-btn
-                  label="Alterar Foto"
+                  :label="$q.screen.xs ? '' : !user.image ? 'Adicionar Foto' : 'Alterar Foto'"
+                  icon="mdi-camera"
                   color="primary"
                   outline
                   @click="fileInputRef.pickFiles()"
@@ -239,58 +244,6 @@
               </q-item-section>
             </q-item>
           </q-list>
-        </q-card>
-
-        <q-card class="q-mb-lg" v-if="settingsStore.settings">
-          <q-card-section>
-            <div class="text-h6">Notificações</div>
-          </q-card-section>
-          <q-list bordered separator>
-            <q-item class="q-py-md">
-              <q-item-section>
-                <q-item-label>Ativar Notificações</q-item-label>
-                <q-item-label caption>
-                  Receba notificações sobre suas tarefas e projetos.
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-toggle v-model="settingsStore.settings.notifyEnabled" size="lg" />
-              </q-item-section>
-            </q-item>
-            <q-item class="q-py-md" :disable="!settingsStore.settings.notifyEnabled">
-              <q-item-section>
-                <q-item-label>Notificações por Email</q-item-label>
-                <q-item-label caption>
-                  Receba atualizações e lembretes importantes por email.
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-toggle
-                  :disable="!settingsStore.settings.notifyEnabled"
-                  v-model="settingsStore.settings.notifyEmail"
-                  size="lg"
-                />
-              </q-item-section>
-            </q-item>
-            <q-item class="q-py-md" :disable="!settingsStore.settings.notifyEnabled">
-              <q-item-section>
-                <q-item-label>Notificações Push</q-item-label>
-                <q-item-label caption>
-                  Receba notificações importantes diretamente no seu dispositivo.
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-toggle
-                  :disable="!settingsStore.settings.notifyEnabled"
-                  v-model="settingsStore.settings.notifyPush"
-                  size="lg"
-                />
-              </q-item-section>
-            </q-item>
-          </q-list>
-          <q-card-actions align="right" class="q-pa-md">
-            <q-btn label="Salvar Notificações" color="primary" @click="saveNotifications" />
-          </q-card-actions>
         </q-card>
 
         <q-card class="danger-zone-card">
@@ -477,15 +430,6 @@ export default {
       }
     };
 
-    const saveNotifications = async () => {
-      const notifyPreferences: UserPreferencesI = {
-        notifyEnabled: settingsStore.settings.notifyEnabled,
-        notifyEmail: settingsStore.settings.notifyEmail,
-        notifyPush: settingsStore.settings.notifyPush,
-      };
-      settingsStore.updateNotifications(notifyPreferences);
-    };
-
     const confirmDeleteAccount = async () => {
       if (deleteConfirmationText.value !== user.value.username) {
         return;
@@ -523,7 +467,6 @@ export default {
       getHexColor,
       selectThemeColor,
       confirmDeleteAccount,
-      saveNotifications,
       showChangePasswordDialog,
       passwordData,
       passwordform,

@@ -40,7 +40,7 @@ body.body--dark {
 
 .q-input input:focus {
   outline: none;
-  border-color: var(--primary-color);
+  border-color: var(--q-primary);
 }
 
 .q-input .q-field__label {
@@ -72,7 +72,7 @@ body.body--dark {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-color);
+  background: var(--q-primary);
   border-radius: 4px;
 }
 

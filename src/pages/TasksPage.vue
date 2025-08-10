@@ -1,6 +1,6 @@
 <template>
   <q-page padding>
-    <q-dialog v-model="showTaskDialog">
+    <q-dialog v-model="showTaskDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <CreateTaskDialogComponent
         :version-id="versionId"
         :status-id="taskStatusId"
@@ -13,7 +13,7 @@
       <!-- Botão de voltar -->
       <q-btn flat round icon="arrow_back" @click="$router.back()" />
       <!-- Filtro -->
-      <div class="filter-group">
+      <div class="filter-group q-mb-xs">
         <span class="filter-label">Prioridade:</span>
         <q-select
           dense
@@ -27,6 +27,9 @@
           style="min-width: 150px"
           class="filter-select"
         />
+      </div>
+      <div :class="'filter-group' + ($q.screen.xs ? ' full-width' : '')">
+        <q-space></q-space>
         <span class="filter-label">Responsável:</span>
         <q-select
           dense

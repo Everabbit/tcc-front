@@ -86,9 +86,9 @@
               hide-bottom-space
               v-model="projectCreateMemberData.id"
               label="Nome de usuário"
-              @filter="filterUser"
               class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xl-6"
               clearable
+              @filter="getUserList"
             >
               <template v-slot:prepend>
                 <q-icon name="mdi-account-plus" />
@@ -150,13 +150,14 @@
 import { RolesValues } from 'src/enums/roles.enum';
 import { ProjectCreateI, ProjectMemberI } from 'src/models/project.model';
 import { clone } from 'src/utils/transform';
-import { computed, onMounted, ref } from 'vue';
+import { computed, ref } from 'vue';
 import { required, validateSelect } from '../../utils/validation';
 import { QForm, useQuasar } from 'quasar';
 import ProjectService from 'src/services/project.service';
 import UserService from 'src/services/user.service';
 import { UserBasicI } from 'src/models/user.model';
 import { useApi } from 'src/services/useApi';
+import { get } from 'http';
 
 export default {
   emits: ['close'],
@@ -174,7 +175,6 @@ export default {
     const bannerFile = ref<File>(null);
     const roles = clone(RolesValues);
     const usersList = ref<UserBasicI[]>([]);
-    const userListClone = ref<UserBasicI[]>([]);
 
     const projectCreateMemberData = ref<ProjectMemberI>({
       role: 2,
@@ -193,26 +193,58 @@ export default {
     });
 
     function addMember() {
+      if (!projectCreateMemberData.value.id) {
+        $q.notify({
+          color: 'negative',
+          message: 'Por favor, selecione um usuário da lista.',
+          icon: 'mdi-alert-circle',
+        });
+        return;
+      }
+
       if (!validateSelect(projectCreateMemberData.value.role)) {
-        return $q.notify({
+        $q.notify({
           color: 'negative',
           message: 'A função do membro é obrigatória  .',
           icon: 'mdi-alert-circle',
         });
+        return;
       }
 
-      const user = usersList.value.find((user) => user.id === projectCreateMemberData.value.id);
+      const user = usersList.value.find((u) => u.id === projectCreateMemberData.value.id);
 
-      projectCreateMemberData.value = {
+      if (!user) {
+        $q.notify({
+          color: 'negative',
+          message: 'Usuário inválido ou a busca foi alterada. Por favor, selecione novamente.',
+          icon: 'mdi-alert-circle',
+        });
+        return;
+      }
+
+      const isAlreadyMember = projectCreateData.value.members.some(
+        (member) => member.id === user.id,
+      );
+
+      if (isAlreadyMember) {
+        $q.notify({
+          color: 'info',
+          message: `${user.username} já é um membro do projeto.`,
+          icon: 'mdi-information',
+        });
+        return;
+      }
+
+      projectCreateData.value.members.push({
         id: user.id,
         username: user.username,
-        image: user.username,
+        image: user.image,
         role: projectCreateMemberData.value.role,
-      };
+      });
 
-      projectCreateData.value.members.push(clone(projectCreateMemberData.value));
       projectCreateMemberData.value.id = null;
       projectCreateMemberData.value.role = 2;
+      usersList.value = [];
     }
 
     function removeMember(index: number) {
@@ -257,48 +289,38 @@ export default {
       }
     }
 
-    async function getUserList(): Promise<void> {
-      const data = await handleApi<UserBasicI[]>(() => UserService.getBasicUserList(), {
-        errorMessage: 'Ocorreu um erro ao buscar lista de usuários.',
-      });
-
-      usersList.value = data;
-      userListClone.value = data;
-    }
-
-    function filterUser(val: string, update: (callbackFn: () => void) => void): void {
-      if (val === '') {
+    async function getUserList(
+      inputValue: string,
+      update: (callbackFn: () => void) => void,
+    ): Promise<void> {
+      if (!inputValue) {
         update(() => {
-          usersList.value = userListClone.value;
+          usersList.value = [];
         });
         return;
       }
 
+      const data = await handleApi<UserBasicI[]>(() => UserService.getBasicUserList(inputValue), {
+        errorMessage: 'Ocorreu um erro ao buscar lista de usuários.',
+      });
+
       update(() => {
-        const needle = val.toLowerCase();
-        usersList.value = userListClone.value.filter(
-          (v) => v.username.toLowerCase().indexOf(needle) > -1,
-        );
+        usersList.value = data || [];
       });
     }
-
-    onMounted(async () => {
-      await getUserList();
-    });
-
     return {
       projectCreateData,
       formattedData,
       projectCreateMemberData,
       roles,
       addMember,
+      getUserList,
       required,
       removeMember,
       addProject,
       form,
       bannerFile,
       usersList,
-      filterUser,
     };
   },
 };

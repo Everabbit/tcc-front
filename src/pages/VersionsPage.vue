@@ -1,6 +1,6 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md" style="min-height: 0px">
-    <q-dialog persistent v-model="showDialog">
+    <q-dialog v-model="showDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <CreateVersionDialogComponent
         @close="closeDialog"
         :project-id="idParse"
@@ -9,13 +9,12 @@
       ></CreateVersionDialogComponent>
     </q-dialog>
 
-    <div
-      class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm flex items-center justify-between"
-    >
+    <div class="row col-12 col-md-10 col-lg-9 q-mb-md flex items-center">
       <!-- Botão de voltar -->
       <q-btn flat round icon="arrow_back" @click="$router.back()" />
+      <q-space></q-space>
       <!-- Filtro -->
-      <div class="filter-group">
+      <div class="filter-group q-mb-xs">
         <span class="filter-label">Status:</span>
         <q-select
           dense
@@ -29,6 +28,9 @@
           style="min-width: 150px"
           class="filter-select"
         />
+      </div>
+      <div :class="'filter-group' + ($q.screen.xs ? ' full-width' : '')">
+        <q-space></q-space>
         <span class="filter-label">Ordenar por:</span>
         <q-select
           dense

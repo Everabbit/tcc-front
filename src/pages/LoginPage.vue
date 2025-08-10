@@ -169,25 +169,27 @@ export default {
       if (isValid) {
         const response = await handleApi<string>(() => UserService.login(clone(user.value)), {
           successMessage: 'Login realizado com sucesso!',
-          errorMessage: 'Ocorreu um erro ao realizar o login.',
+          errorMessage: 'Email, nome de usuário ou senha incorretos.',
         });
 
-        const token: string = response;
+        if (response) {
+          const token: string = response;
+          authStore.setToken(token);
 
-        authStore.setToken(token);
+          const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
+            errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
+          });
 
-        const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
-          errorMessage: 'Ocorreu um erro ao buscar informações do usuário.',
-        });
-
-        userBasic.value = userResponse;
-        logged.value = true;
-
-        router.push('/p/dashboard');
+          if (userResponse) {
+            userBasic.value = userResponse;
+            logged.value = true;
+            router.push('/p/dashboard');
+          }
+        }
       } else {
         $q.notify({
           type: 'negative',
-          message: 'Corrija os erros no formulário',
+          message: 'Por favor, corrija os erros no formulário.',
         });
       }
     }

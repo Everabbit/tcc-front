@@ -30,7 +30,7 @@ export default class UserService {
       }
     } catch (err: any) {
       const response: ResponseI = {
-        message: err,
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
         success: false,
       };
       return response;
@@ -278,9 +278,13 @@ export default class UserService {
     }
   }
 
-  static async getBasicUserList(): Promise<ResponseI> {
+  static async getBasicUserList(username: string): Promise<ResponseI> {
     try {
-      const response: AxiosResponse = await api.get(`/users/basicinfolist`);
+      if (!username) {
+        throw Error('Informe um nome de usuário válido!');
+      }
+      username = toBase64(username);
+      const response: AxiosResponse = await api.get(`/users/basicinfolist/${username}`);
 
       if (response.status === 200) {
         return response.data;

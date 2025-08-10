@@ -1,6 +1,6 @@
 <template>
   <q-page padding>
-    <div class="row q-col-gutter-md q-mb-lg">
+    <!-- <div class="row q-col-gutter-md q-mb-lg">
       <div class="col-12 col-sm-6 col-md-3" v-for="stat in stats" :key="stat.title">
         <q-card class="summary-card" flat bordered>
           <q-card-section>
@@ -120,7 +120,7 @@
           </q-tab-panels>
         </q-card>
       </div>
-    </div>
+    </div> -->
   </q-page>
 </template>
 

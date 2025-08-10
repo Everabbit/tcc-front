@@ -23,7 +23,7 @@
               hide-bottom-space
               v-model="memberData.id"
               label="Nome de usuário"
-              @filter="filterUser"
+              @filter="getUserList"
               class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xl-6"
               clearable
             >
@@ -114,26 +114,55 @@ export default {
     const memberList = ref<ProjectMemberI[]>([]);
 
     function addMember() {
-      if (!validateSelect(memberData.value.role)) {
-        return $q.notify({
+      if (!memberData.value.id) {
+        $q.notify({
           color: 'negative',
-          message: 'A função do membro é obrigatória  .',
+          message: 'Por favor, selecione um usuário da lista.',
           icon: 'mdi-alert-circle',
         });
+        return;
       }
 
-      const user = usersList.value.find((user) => user.id === memberData.value.id);
+      if (!validateSelect(memberData.value.role)) {
+        $q.notify({
+          color: 'negative',
+          message: 'A função do membro é obrigatória.',
+          icon: 'mdi-alert-circle',
+        });
+        return;
+      }
 
-      memberData.value = {
+      const user = usersList.value.find((u) => u.id === memberData.value.id);
+      if (!user) {
+        $q.notify({
+          color: 'negative',
+          message: 'Usuário inválido. Por favor, selecione novamente.',
+          icon: 'mdi-alert-circle',
+        });
+        return;
+      }
+
+      const isAlreadyMember = memberList.value.some((member) => member.id === user.id);
+      if (isAlreadyMember) {
+        $q.notify({
+          color: 'info',
+          message: `${user.username} já está na lista para ser adicionado.`,
+          icon: 'mdi-information',
+        });
+        memberData.value.id = null;
+        return;
+      }
+
+      memberList.value.push({
         id: user.id,
         username: user.username,
-        image: user.username,
+        image: user.image,
         role: memberData.value.role,
-      };
+      });
 
-      memberList.value.push(clone(memberData.value));
       memberData.value.id = null;
       memberData.value.role = 2;
+      usersList.value = [];
     }
 
     function removeMember(index: number) {
@@ -166,34 +195,25 @@ export default {
       }
     }
 
-    async function getUserList(): Promise<void> {
-      const data = await handleApi<UserBasicI[]>(() => UserService.getBasicUserList(), {
-        errorMessage: 'Ocorreu um erro ao buscar lista de usuários.',
-      });
-
-      usersList.value = data;
-      userListClone.value = data;
-    }
-
-    function filterUser(val: string, update: (callbackFn: () => void) => void): void {
-      if (val === '') {
+    async function getUserList(
+      inputValue: string,
+      update: (callbackFn: () => void) => void,
+    ): Promise<void> {
+      if (!inputValue) {
         update(() => {
-          usersList.value = userListClone.value;
+          usersList.value = [];
         });
         return;
       }
 
+      const data = await handleApi<UserBasicI[]>(() => UserService.getBasicUserList(inputValue), {
+        errorMessage: 'Ocorreu um erro ao buscar lista de usuários.',
+      });
+
       update(() => {
-        const needle = val.toLowerCase();
-        usersList.value = userListClone.value.filter(
-          (v) => v.username.toLowerCase().indexOf(needle) > -1,
-        );
+        usersList.value = data || [];
       });
     }
-
-    onMounted(async () => {
-      await getUserList();
-    });
 
     return {
       memberList,
@@ -205,7 +225,7 @@ export default {
       addMembers,
       form,
       usersList,
-      filterUser,
+      getUserList,
     };
   },
 };

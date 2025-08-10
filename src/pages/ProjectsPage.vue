@@ -1,13 +1,13 @@
 <template>
   <q-page class="row justify-center content-start q-pa-md">
-    <q-dialog persistent v-model="showDialog">
+    <q-dialog v-model="showDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <CreateProjectDialog v-if="showDialog" @close="closeDialog"></CreateProjectDialog>
     </q-dialog>
 
-    <div class="row col-12 col-md-10 col-lg-9 q-mb-md q-gutter-sm">
+    <div class="row col-12 col-md-10 col-lg-9 q-mb-md">
       <!-- Filtro de Status -->
       <q-space></q-space>
-      <div class="filter-group">
+      <div class="filter-group q-mb-xs">
         <span class="filter-label">Status:</span>
         <q-select
           dense
@@ -22,9 +22,9 @@
           class="filter-select"
         />
       </div>
-
       <!-- Filtro de Ordenação -->
-      <div class="filter-group">
+      <div :class="'filter-group' + ($q.screen.xs ? ' full-width' : '')">
+        <q-space></q-space>
         <span class="filter-label">Ordenar por:</span>
         <q-select
           dense

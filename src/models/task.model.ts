@@ -12,8 +12,6 @@ export interface TaskI {
   version?: VersionI;
   assigneeId?: number;
   assignee?: UserI;
-  parentTaskId?: number;
-  parentTask?: TaskI;
   title: string;
   description?: string;
   priority: PriorityEnum;
