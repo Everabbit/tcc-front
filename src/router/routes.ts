@@ -28,17 +28,21 @@ const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'projetos/:id',
+        path: 'projetos/:projectId',
         component: () => import('pages/ProjectPage.vue'),
         name: 'Projeto',
         props: true,
+        meta: {
+          checkPermission: true,
+        },
       },
       {
-        path: 'projetos/versoes/:id',
+        path: 'projetos/versoes/:projectId',
         component: () => import('pages/VersionsPage.vue'),
         name: 'Versões',
         props: true,
         meta: {
+          checkPermission: true,
           button: true,
           label: 'Nova Versão',
           icon: 'mdi-plus',
@@ -51,6 +55,7 @@ const routes: RouteRecordRaw[] = [
         name: 'Tarefas',
         props: true,
         meta: {
+          checkPermission: true,
           button: true,
           label: 'Nova Tarefa',
           icon: 'mdi-plus',

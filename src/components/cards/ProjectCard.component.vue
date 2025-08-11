@@ -141,13 +141,20 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .project-card {
   border-radius: 8px;
+  border: 1px solid;
+  border-color: $grey-5;
   transition:
     transform 0.3s,
     box-shadow 0.3s;
   cursor: pointer;
+
+  .body--dark & {
+    background-color: $grey-10;
+    border: 0px solid;
+  }
 }
 
 .project-card:hover {

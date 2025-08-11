@@ -2,7 +2,7 @@
   <div class="kanban-column">
     <div class="column-header">
       <span class="text-subtitle1 text-bold">{{ column.name }}</span>
-      <q-badge color="grey-8" class="text-bold">{{ column.tasks.length }}</q-badge>
+      <q-badge color="primary" class="text-bold">{{ column.tasks.length }}</q-badge>
     </div>
 
     <draggable
@@ -18,8 +18,7 @@
     </draggable>
 
     <q-btn
-      outline
-      color="grey"
+      color="primary"
       icon="mdi-plus"
       label="Adicionar Tarefa"
       class="full-width q-mt-md"

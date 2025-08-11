@@ -13,7 +13,6 @@
         />
 
         <q-toolbar-title class="q-py-sm"> {{ $route.name }} </q-toolbar-title>
-        <q-space />
         <q-btn
           v-if="button.button"
           class="new-project-btn hover-lift"

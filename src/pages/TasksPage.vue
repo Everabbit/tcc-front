@@ -12,6 +12,7 @@
     <div class="row items-center justify-between q-mb-md">
       <!-- Botão de voltar -->
       <q-btn flat round icon="arrow_back" @click="$router.back()" />
+      <q-space></q-space>
       <!-- Filtro -->
       <div class="filter-group q-mb-xs">
         <span class="filter-label">Prioridade:</span>

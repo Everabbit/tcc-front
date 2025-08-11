@@ -41,7 +41,10 @@
       </div>
     </div>
 
-    <div class="projects-grid col-12 col-md-10 col-lg-9">
+    <div
+      v-if="projectsFiltered && projectsFiltered.length > 0"
+      class="projects-grid col-12 col-md-10 col-lg-9"
+    >
       <!-- Cards de projetos -->
       <div v-for="project in projectsFiltered" :key="project.id">
         <ProjectCardComponent :project="project" />
@@ -54,6 +57,12 @@
           <div>Adicionar novo projeto</div>
         </q-card-section>
       </q-card>
+    </div>
+    <div v-else class="col-12 text-center text-grey-7">
+      <q-icon name="mdi-information-outline" size="50px" />
+      <p class="text-h6">Nenhum projeto encontrado.</p>
+      <p class="text-subtitle1">Parece que não encontramos nenhum projeto para esses filtros.</p>
+      <q-btn color="primary" icon="add" label="Criar Novo Projeto" @click="openDialog()" />
     </div>
   </q-page>
 </template>

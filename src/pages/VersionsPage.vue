@@ -88,7 +88,7 @@ import VersionCardComponent from 'src/components/cards/VersionCard.component.vue
 export default {
   components: { CreateVersionDialogComponent, VersionCardComponent },
   props: {
-    id: {
+    projectId: {
       type: String,
       required: true,
     },
@@ -98,7 +98,7 @@ export default {
     const { handleApi } = useApi();
     const showDialog = ref<boolean>(false);
     const versions = ref<VersionI[]>();
-    const idParse = ref<number>(parseInt(fromBase64(props.id)));
+    const idParse = ref<number>(parseInt(fromBase64(props.projectId)));
     const versionEditId = ref<string>(null);
 
     const statusFilter = ref<number>(1);
@@ -212,7 +212,7 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        await handleApi(() => VersionService.delete(id), {
+        await handleApi(() => VersionService.delete(id, idParse.value), {
           errorMessage: 'Ocorreu um erro ao remover a versão.',
           successMessage: 'Versão removida com sucesso!',
         });

@@ -29,7 +29,7 @@
               v-model="editedTask.description"
               outlined
               type="textarea"
-              rows="5"
+              rows="3"
             />
 
             <TaskAttachmentsComponent
@@ -88,17 +88,30 @@
                 </template>
               </q-select>
 
-              <q-select
-                label="Status *"
-                v-model="editedTask.status"
-                :options="statusOptions"
-                outlined
-                emit-value
-                map-options
-                :rules="[required('Status')]"
-                hide-bottom-space
-                class="q-mb-md"
-              />
+              <div class="row">
+                <div class="q-mb-md q-pr-xs col-6">
+                  <q-select
+                    label="Status *"
+                    v-model="editedTask.status"
+                    :options="statusOptions"
+                    outlined
+                    emit-value
+                    map-options
+                    :rules="[required('Status')]"
+                    hide-bottom-space
+                  />
+                </div>
+                <div class="q-mb-md q-pl-xs col-6">
+                  <q-select
+                    label="Prioridade"
+                    v-model="editedTask.priority"
+                    :options="priorityOptions"
+                    outlined
+                    emit-value
+                    map-options
+                  />
+                </div>
+              </div>
 
               <q-input
                 v-if="isMyTasks"
@@ -130,16 +143,6 @@
                   <q-icon name="mdi-account-star-outline" />
                 </template>
               </q-select>
-
-              <q-select
-                label="Prioridade"
-                v-model="editedTask.priority"
-                :options="priorityOptions"
-                outlined
-                emit-value
-                map-options
-                class="q-mb-md"
-              />
 
               <q-input
                 label="Prazo da Tarefa"
@@ -217,30 +220,37 @@
 
               <div v-if="isEditing" class="q-mt-md">
                 <q-separator class="q-mb-md" />
-                <q-list dense>
-                  <q-item>
-                    <q-item-section avatar>
-                      <q-icon name="mdi-calendar-plus" color="grey-7" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label caption>Criada em</q-item-label>
-                      <q-item-label>{{
-                        new Date(editedTask.createdAt).toLocaleDateString() || 'Não disponível'
-                      }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  <q-item v-if="editedTask.updatedAt">
-                    <q-item-section avatar>
-                      <q-icon name="mdi-calendar-arrow-right" color="grey-7" />
-                    </q-item-section>
-                    <q-item-section>
-                      <q-item-label caption>Atualizada em</q-item-label>
-                      <q-item-label>{{
-                        new Date(editedTask.updatedAt).toLocaleDateString()
-                      }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
+                <div class="row q-col-gutter-x-md q-col-gutter-y-sm">
+                  <div class="col-12 col-sm-6">
+                    <div class="flex items-center">
+                      <q-icon name="mdi-calendar-plus" color="grey-7" size="20px" class="q-mr-sm" />
+                      <div>
+                        <div class="text-caption text-grey-7">Criada em</div>
+                        <div class="text-body2">
+                          {{
+                            new Date(editedTask.createdAt).toLocaleDateString() || 'Não disponível'
+                          }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-6" v-if="editedTask.updatedAt">
+                    <div class="flex items-center">
+                      <q-icon
+                        name="mdi-calendar-arrow-right"
+                        color="grey-7"
+                        size="20px"
+                        class="q-mr-sm"
+                      />
+                      <div>
+                        <div class="text-caption text-grey-7">Atualizada em</div>
+                        <div class="text-body2">
+                          {{ new Date(editedTask.updatedAt).toLocaleDateString() }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -249,7 +259,11 @@
 
       <q-separator />
 
-      <q-card-actions align="right" class="dialog-footer">
+      <q-card-actions class="dialog-footer">
+        <q-btn label="Remover Tarefa" icon="mdi-delete" color="red" @click="deleteTask" flat />
+
+        <q-space />
+
         <q-btn label="Cancelar" color="grey" v-close-popup flat />
         <q-btn
           :label="isEditing ? 'Salvar Alterações' : 'Criar Tarefa'"
@@ -532,6 +546,29 @@ export default defineComponent({
       emit('close');
     }
 
+    async function deleteTask() {
+      $q.dialog({
+        title: 'Confirmar Exclusão',
+        message: 'Tem certeza de que deseja excluir esta tarefa permanentemente?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'red',
+        },
+        persistent: true,
+      }).onOk(async () => {
+        await handleApi(() => TaskService.delete(props.taskId), {
+          successMessage: 'Tarefa excluída com sucesso!',
+          errorMessage: 'Ocorreu um erro ao excluir a tarefa.',
+        });
+        emit('close');
+      });
+    }
+
     const updateAttachments = (attachments: File[]) => {
       files.value = attachments;
     };
@@ -556,6 +593,7 @@ export default defineComponent({
       priorityOptions,
       assigneeOptions,
       deadlineFormatted,
+      deleteTask,
       onSave,
       required,
       filterAssignee,

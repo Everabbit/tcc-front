@@ -299,4 +299,26 @@ export default class UserService {
       return response;
     }
   }
+
+  static async getUserRole(projectId: number): Promise<ResponseI> {
+    try {
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.get(`/users/role/${projectId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }

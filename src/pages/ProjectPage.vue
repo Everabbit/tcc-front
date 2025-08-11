@@ -32,6 +32,7 @@
       <!-- Banner Editável -->
       <div class="project-banner q-mb-lg">
         <input
+          v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
           type="file"
           ref="bannerInput"
           accept="image/*"
@@ -42,19 +43,33 @@
         <div
           v-if="!project.banner"
           class="banner-placeholder"
-          :style="`background-color: ${getRandomColor()};`"
-          @click="$refs.bannerInput.click()"
+          :style="`background-color: ${getRandomColor()}; ${
+            useRoles.hasPermission(RolesEnum.MANAGER) ? 'cursor: pointer' : 'cursor: default'
+          }`"
+          @click="($refs.bannerInput as HTMLInputElement).click()"
         >
-          <q-icon name="add_photo_alternate" size="2rem" />
-          <div>Clique para adicionar uma imagem</div>
+          <q-icon
+            name="add_photo_alternate"
+            size="2rem"
+            v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+          />
+          <div v-if="useRoles.hasPermission(RolesEnum.MANAGER)">
+            Clique para adicionar uma imagem
+          </div>
         </div>
 
         <template v-else>
-          <q-img :src="project.banner" class="editable-banner" @click="$refs.bannerInput.click()">
-            <div class="banner-overlay">
+          <q-img
+            :src="project.banner"
+            class="editable-banner"
+            :style="`${useRoles.hasPermission(RolesEnum.MANAGER) ? 'cursor: pointer' : 'cursor: default'}`"
+            @click="($refs.bannerInput as HTMLInputElement).click()"
+          >
+            <div class="banner-overlay" v-if="useRoles.hasPermission(RolesEnum.MANAGER)">
               <q-icon name="edit" size="1.5rem" />
               <div>Clique para trocar a imagem</div>
               <q-btn
+                v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
                 class="delete-btn"
                 size="15px"
                 icon="mdi-delete"
@@ -374,7 +389,7 @@ import AddMemberDialogCompoent from 'src/components/dialogs/AddMemberDialog.comp
 import AddTagDialogComponent from 'src/components/dialogs/AddTagDialog.component.vue';
 import CreateVersionDialog from 'src/components/dialogs/CreateVersionDialog.component.vue';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
-import { RolesValues } from 'src/enums/roles.enum';
+import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { TaskStatusEnum, VersionStatus } from 'src/enums/status.enum';
 import { ProjectI } from 'src/models/project.model';
 import { TagI } from 'src/models/tag.model';
@@ -389,6 +404,7 @@ import { useRouter } from 'vue-router';
 import { formatDate, getUsernameInitials } from 'src/utils/utils';
 import TagService from 'src/services/tag.service';
 import { useApi } from 'src/services/useApi';
+import { useRolesStore } from 'src/stores/rolesStore';
 
 export default {
   components: {
@@ -397,7 +413,7 @@ export default {
     AddTagDialogComponent,
   },
   props: {
-    id: {
+    projectId: {
       type: String,
       required: true,
     },
@@ -406,6 +422,7 @@ export default {
     const $q = useQuasar();
     const $router = useRouter();
     const { handleApi } = useApi();
+    const useRoles = useRolesStore();
     const project = ref<ProjectI>({
       creatorId: 0,
       name: '',
@@ -421,7 +438,7 @@ export default {
     const status = clone(ProjectStatusValues);
     const form = ref<QForm>(null);
     const bannerFile = ref<File>(null);
-    const idParse = ref<number>(parseInt(fromBase64(props.id)));
+    const idParse = ref<number>(parseInt(fromBase64(props.projectId)));
     const versionEditId = ref<string>(null);
     const actuallyTag = ref<TagI>(null);
 
@@ -568,7 +585,7 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        await handleApi(() => VersionService.delete(id), {
+        await handleApi(() => VersionService.delete(id, idParse.value), {
           errorMessage: 'Ocorreu um erro ao remover a versão.',
           successMessage: 'Versão removida com sucesso!',
         });
@@ -619,7 +636,7 @@ export default {
     }
 
     function gotToTasks(id: number) {
-      const projectId = props.id;
+      const projectId = props.projectId;
       const versionId = toBase64(id.toString());
       $router.push(`/p/projetos/versoes/tarefas/${projectId}/${versionId}`);
     }
@@ -708,6 +725,8 @@ export default {
       actuallyTag,
       gotToTasks,
       getPercentVersionTasks,
+      useRoles,
+      RolesEnum,
     };
   },
 };
@@ -721,7 +740,6 @@ export default {
 .project-banner {
   position: relative;
   height: 200px;
-  cursor: pointer;
   border-radius: 8px;
   background-size: cover;
   background-position: center;

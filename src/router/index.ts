@@ -8,6 +8,8 @@ import {
 import routes from './routes';
 import { useAuthStore } from 'src/stores/authStore';
 import { useSettingsStore } from 'src/stores/settingsStore';
+import { fromBase64 } from 'src/utils/transform';
+import { useRolesStore } from 'src/stores/rolesStore';
 
 /*
  * If not building with SSR mode, you can
@@ -43,6 +45,18 @@ export default defineRouter(function (/* { store, ssrContext } */) {
 
     const isAuthenticated = authStore.isAuthenticated;
     const requiresAuth = to.meta.requiresAuth;
+    const checkPermission = to.meta.checkPermission;
+
+    if (checkPermission) {
+      if (!to.params.projectId) {
+        next({ name: 'Dashboard' });
+      }
+      const projectId = fromBase64(to.params.projectId as string);
+      if (projectId) {
+        const rolesStore = useRolesStore();
+        await rolesStore.fetchAndSetRole(Number(projectId));
+      }
+    }
 
     if (requiresAuth && isAuthenticated) {
       await settingsStore.fetchAndApplySettings();

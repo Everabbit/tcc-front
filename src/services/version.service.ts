@@ -50,13 +50,17 @@ export default class VersionService {
     }
   }
 
-  static async delete(id: number): Promise<ResponseI> {
+  static async delete(id: number, projectId: number): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
       }
 
-      const response: AxiosResponse = await api.delete(`/versions/remove/${id}`);
+      if (!projectId) {
+        throw Error('Informe um projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/versions/remove/${projectId}/${id}`);
 
       if (response.status === 200) {
         return response.data;
