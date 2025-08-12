@@ -34,7 +34,12 @@
           <!-- Modo de Visualização -->
           <q-item-section v-else>
             <q-item-label class="text-weight-bold">
-              {{ comment.author.username }}
+              <span>
+                {{ comment.author.username }}
+              </span>
+              <q-badge v-if="comment.authorRole" color="primary" class="q-ml-sm">
+                {{ roles.find((role) => role.id === comment.authorRole).name }}
+              </q-badge>
             </q-item-label>
             <q-item-label style="white-space: pre-wrap">{{ comment.content }}</q-item-label>
             <q-item-label caption>
@@ -84,11 +89,14 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar';
+import { RolesValues } from 'src/enums/roles.enum';
 import { CommentI } from 'src/models/comment.model';
 import { UserBasicI } from 'src/models/user.model';
 import TaskService from 'src/services/task.service';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
+import { useRolesStore } from 'src/stores/rolesStore';
+import { clone } from 'src/utils/transform';
 import { getUsernameInitials } from 'src/utils/utils';
 import { PropType, ref } from 'vue';
 
@@ -112,9 +120,11 @@ export default {
     const $q = useQuasar();
     const { handleApi } = useApi();
     const authStore = useAuthStore();
+    const rolesStore = useRolesStore();
     const newCommentText = ref<string>('');
     const editingComment = ref<CommentI | null>(null);
     const editedCommentContent = ref<string>('');
+    const roles = clone(RolesValues);
 
     const startEditingComment = (comment: CommentI) => {
       editingComment.value = { ...comment };
@@ -132,6 +142,7 @@ export default {
       const editedComment: CommentI = {
         ...editingComment.value,
         content: editedCommentContent.value,
+        authorRole: rolesStore.role,
         edited: true,
       };
 
@@ -171,6 +182,7 @@ export default {
         taskId: props.taskId,
         authorId: authStore.user.id,
         content: newCommentText.value,
+        authorRole: rolesStore.role,
         createdAt: new Date(),
         edited: false,
         author: authStore.user,
@@ -197,6 +209,7 @@ export default {
       addComment,
       removeComment,
       authStore,
+      roles,
     };
   },
 };
