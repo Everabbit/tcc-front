@@ -15,6 +15,7 @@ import { ColumnI } from 'src/models/extra.model';
 import KanbanColumnComponent from './KanbanColumn.component.vue';
 import TaskService from 'src/services/task.service';
 import { useQuasar } from 'quasar';
+import { useApi } from 'src/services/useApi';
 
 export default {
   props: {
@@ -27,25 +28,25 @@ export default {
   components: { KanbanColumnComponent },
   setup(props, { emit }) {
     const $q = useQuasar();
+    const { handleApi } = useApi();
 
     const handleTaskMove = async (changeEvent, newStatusId) => {
       const { added, moved } = changeEvent;
       const eventData = added || moved;
 
       if (eventData) {
-        const taskId = eventData.element.id;
-        // Apenas faz a chamada de API e avisa o pai que algo mudou
-        await TaskService.updateStatus(taskId, newStatusId);
+        const task = eventData.element;
+        const taskId = task.id;
 
-        $q.notify({
-          type: 'positive',
-          message: `Tarefa "${eventData.element.title}" movida!`,
-          timeout: 1000,
-          position: 'top',
+        // Apenas faz a chamada de API e avisa o pai que algo mudou
+        const data = await handleApi(() => TaskService.updateStatus(taskId, newStatusId), {
+          successMessage: `Tarefa "${eventData.element.title}" movida!`,
+          errorMessage: 'Ocorreu um erro ao mover a tarefa.',
         });
 
-        // Emite um evento para o pai (TasksPage) para que ele possa recarregar os dados
-        emit('task-updated');
+        if (data) {
+          emit('task-updated', taskId, newStatusId);
+        }
       }
     };
 

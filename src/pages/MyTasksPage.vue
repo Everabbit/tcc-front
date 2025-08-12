@@ -74,12 +74,19 @@ export default {
       { id: filterTaskPriorityEnum.LOW, value: 'Baixa' },
     ]);
 
-    const fetchTasks = async () => {
-      const tasksResponse = await handleApi<TaskI[]>(() => TaskService.getAll(), {
-        errorMessage: 'Ocorreu um erro ao buscar tarefas.',
-      });
+    const fetchTasks = async (taskId: number | null = null, statusId: number | null = null) => {
+      if (taskId && statusId) {
+        const taskIndex = allTasks.value.findIndex((task) => task.id === taskId);
+        if (taskIndex !== -1) {
+          allTasks.value[taskIndex].status = statusId;
+        }
+      } else {
+        const tasksResponse = await handleApi<TaskI[]>(() => TaskService.getAll(), {
+          errorMessage: 'Ocorreu um erro ao buscar tarefas.',
+        });
 
-      allTasks.value = tasksResponse;
+        allTasks.value = tasksResponse;
+      }
     };
 
     const distributedAndFilteredColumns = computed((): ColumnI[] => {
@@ -119,8 +126,8 @@ export default {
       taskStatusId.value = statusId ? statusId : TaskStatusEnum.PENDING;
     };
 
-    const saveTask = () => {
-      emitter.emit('update-tasks');
+    const saveTask = async () => {
+      await fetchTasks();
       showTaskDialog.value = false;
       taskEditId.value = null;
       taskStatusId.value = TaskStatusEnum.PENDING;
@@ -129,7 +136,6 @@ export default {
     onMounted(async () => {
       await fetchTasks();
       emitter.on('open-task-dialog', openTaskDialog);
-      emitter.emit('update-tasks');
     });
 
     onBeforeMount(() => {

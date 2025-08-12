@@ -29,6 +29,7 @@
               <q-tooltip>Abrir</q-tooltip>
             </q-btn>
             <q-btn
+              v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
               flat
               dense
               round
@@ -43,8 +44,9 @@
       </q-item>
     </q-list>
     <div v-else class="text-center text-grey q-pa-md">Nenhum arquivo anexado ainda.</div>
-    <q-separator class="q-my-sm" />
+    <q-separator class="q-my-sm" v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)" />
     <q-file
+      v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
       outlined
       v-model="files"
       accept=".jpg, .jpeg, .png, .pdf, .zip, .doc, .docx"
@@ -65,9 +67,11 @@
 
 <script lang="ts">
 import { useQuasar } from 'quasar';
+import { RolesEnum } from 'src/enums/roles.enum';
 import { AttachmentI } from 'src/models/attachment.model';
 import TaskService from 'src/services/task.service';
 import { useApi } from 'src/services/useApi';
+import { useRolesStore } from 'src/stores/rolesStore';
 import { formatFileSize, getIconForFileType } from 'src/utils/utils';
 import { PropType, ref } from 'vue';
 
@@ -81,10 +85,15 @@ export default {
       type: Number,
       default: null,
     },
+    projectId: {
+      type: Number,
+      default: null,
+    },
   },
   emits: ['attachment-removed', 'files-selected'],
   setup(props, { emit }) {
     const $q = useQuasar();
+    const rolesStore = useRolesStore();
     const { handleApi } = useApi();
     const files = ref<File[]>([]);
 
@@ -103,10 +112,13 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        const result = await handleApi(() => TaskService.deleteAttachment(attachmentId), {
-          successMessage: 'Anexo removido com sucesso!',
-          errorMessage: 'Erro ao remover anexo.',
-        });
+        const result = await handleApi(
+          () => TaskService.deleteAttachment(attachmentId, props.projectId),
+          {
+            successMessage: 'Anexo removido com sucesso!',
+            errorMessage: 'Erro ao remover anexo.',
+          },
+        );
         if (result !== null) {
           emit('attachment-removed');
         }
@@ -136,6 +148,8 @@ export default {
       removeAttachment,
       files,
       setFiles,
+      rolesStore,
+      RolesEnum,
     };
   },
 };

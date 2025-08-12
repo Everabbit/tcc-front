@@ -115,12 +115,19 @@ export default {
 
     const allTasks = ref<TaskI[]>([]);
 
-    const fetchTasks = async () => {
-      const data = await handleApi<TaskI[]>(() => TaskService.getAll(versionId.value), {
-        errorMessage: 'Ocorreu um erro ao buscar tarefas.',
-      });
+    const fetchTasks = async (taskId: number | null = null, statusId: number | null = null) => {
+      if (taskId && statusId) {
+        const taskIndex = allTasks.value.findIndex((task) => task.id === taskId);
+        if (taskIndex !== -1) {
+          allTasks.value[taskIndex].status = statusId;
+        }
+      } else {
+        const tasksResponse = await handleApi<TaskI[]>(() => TaskService.getAll(versionId.value), {
+          errorMessage: 'Ocorreu um erro ao buscar tarefas.',
+        });
 
-      allTasks.value = data;
+        allTasks.value = tasksResponse;
+      }
     };
 
     const distributedAndFilteredColumns = computed((): ColumnI[] => {

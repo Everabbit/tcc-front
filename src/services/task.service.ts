@@ -5,13 +5,17 @@ import { TaskStatusEnum } from 'src/enums/status.enum';
 import { CommentI } from 'src/models/comment.model';
 
 export default class TaskService {
-  static async create(task: FormData): Promise<ResponseI> {
+  static async create(task: FormData, projectId: number): Promise<ResponseI> {
     try {
       if (!task) {
         throw Error('Informe uma tarefa válida!');
       }
 
-      const response: AxiosResponse = await api.post(`/tasks/create`, task, {
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.post(`/tasks/create/${projectId}`, task, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -31,7 +35,7 @@ export default class TaskService {
     }
   }
 
-  static async update(taskId: number, task: FormData): Promise<ResponseI> {
+  static async update(taskId: number, task: FormData, projectId: number): Promise<ResponseI> {
     try {
       if (!taskId) {
         throw Error('Informe um ID de tarefa válido!');
@@ -40,7 +44,11 @@ export default class TaskService {
         throw Error('Informe uma tarefa válida!');
       }
 
-      const response: AxiosResponse = await api.put(`/tasks/update/${taskId}`, task, {
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.put(`/tasks/update/${projectId}/${taskId}`, task, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -60,13 +68,17 @@ export default class TaskService {
     }
   }
 
-  static async delete(taskId: number): Promise<ResponseI> {
+  static async delete(taskId: number, projectId: number): Promise<ResponseI> {
     try {
       if (!taskId) {
         throw Error('Informe um ID de tarefa válido!');
       }
 
-      const response: AxiosResponse = await api.delete(`/tasks/delete/${taskId}`);
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/tasks/delete/${projectId}/${taskId}`);
 
       if (response.status === 200) {
         return response.data;
@@ -109,7 +121,9 @@ export default class TaskService {
         throw Error('Informe um status válido!');
       }
 
-      const response: AxiosResponse = await api.put(`/tasks/updatestatus/${taskId}`, { status });
+      const response: AxiosResponse = await api.put(`/tasks/updatestatus/${taskId}`, {
+        status,
+      });
 
       if (response.status === 200) {
         return response.data;
@@ -211,13 +225,18 @@ export default class TaskService {
       return response;
     }
   }
-  static async deleteAttachment(attachmentId: number): Promise<ResponseI> {
+  static async deleteAttachment(attachmentId: number, projectId: number): Promise<ResponseI> {
     try {
       if (!attachmentId) {
         throw Error('Informe um ID de anexo válido!');
       }
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
 
-      const response: AxiosResponse = await api.delete(`/tasks/removeattachment/${attachmentId}`);
+      const response: AxiosResponse = await api.delete(
+        `/tasks/removeattachment/${projectId}/${attachmentId}`,
+      );
 
       if (response.status === 200) {
         return response.data;

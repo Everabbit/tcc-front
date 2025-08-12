@@ -4,7 +4,7 @@
       <q-card-section class="dialog-header">
         <div class="text-h6">
           <q-icon name="mdi-format-list-bulleted-square" class="q-mr-sm" />
-          {{ isEditing ? 'Editar Tarefa' : 'Criar Nova Tarefa' }}
+          {{ getTitle() }}
         </div>
         <q-btn icon="mdi-close" flat round dense v-close-popup />
       </q-card-section>
@@ -15,6 +15,7 @@
         <div class="row q-col-gutter-x-lg q-col-gutter-y-md">
           <div class="col-12 col-md-7">
             <q-input
+              :readonly="!rolesStore.hasPermission(RolesEnum.DEVELOPER)"
               label="Título da Tarefa *"
               v-model="editedTask.title"
               autofocus
@@ -25,6 +26,7 @@
             />
 
             <q-input
+              :readonly="!rolesStore.hasPermission(RolesEnum.DEVELOPER)"
               label="Descrição"
               v-model="editedTask.description"
               outlined
@@ -35,6 +37,7 @@
             <TaskAttachmentsComponent
               :attachments="editedTask.attachments"
               :task-id="editedTask.id"
+              :project-id="projectId"
               @attachment-removed="fetchTask"
               @files-selected="updateAttachments"
             />
@@ -50,9 +53,10 @@
 
           <div class="col-12 col-md-5">
             <div class="details-sidebar q-pa-md rounded-borders">
-              <div class="text-subtitle1 q-mb-md text-weight-medium">Detalhes da Tarefa</div>
+              <div class="text-subtitle1 q-mb-sm text-weight-medium">Detalhes da Tarefa</div>
 
               <q-select
+                v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                 label="Projeto *"
                 v-model="projectSelectId"
                 :options="projects"
@@ -63,14 +67,28 @@
                 outlined
                 :rules="[required('Projeto')]"
                 hide-bottom-space
-                class="q-mb-md"
+                class="q-mb-sm"
                 @update:model-value="fetchVersions"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-folder-open-outline" />
                 </template>
               </q-select>
+              <q-input
+                v-else
+                label="Projeto"
+                :model-value="editedTask.version?.project?.name"
+                outlined
+                readonly
+                disable
+                class="q-mb-sm"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-folder-open-outline" />
+                </template>
+              </q-input>
               <q-select
+                v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                 label="Versão *"
                 v-model="versionSelectId"
                 :options="versions"
@@ -81,16 +99,30 @@
                 outlined
                 :rules="[required('Versão')]"
                 hide-bottom-space
-                class="q-mb-md"
+                class="q-mb-sm"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-tag-outline" />
                 </template>
               </q-select>
+              <q-input
+                v-else
+                label="Versão"
+                :model-value="editedTask.version?.name"
+                outlined
+                readonly
+                disable
+                class="q-mb-sm"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-tag-outline" />
+                </template>
+              </q-input>
 
-              <div class="row">
-                <div class="q-mb-md q-pr-xs col-6">
+              <div class="row q-mb-sm">
+                <div class="q-pr-xs col-6">
                   <q-select
+                    v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                     label="Status *"
                     v-model="editedTask.status"
                     :options="statusOptions"
@@ -100,9 +132,20 @@
                     :rules="[required('Status')]"
                     hide-bottom-space
                   />
+                  <q-input
+                    v-else
+                    label="Status"
+                    :model-value="
+                      statusOptions.find((status) => status.value === editedTask.status)?.label
+                    "
+                    outlined
+                    readonly
+                    disable
+                  />
                 </div>
-                <div class="q-mb-md q-pl-xs col-6">
+                <div class="q-pl-xs col-6">
                   <q-select
+                    v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                     label="Prioridade"
                     v-model="editedTask.priority"
                     :options="priorityOptions"
@@ -110,17 +153,28 @@
                     emit-value
                     map-options
                   />
+                  <q-input
+                    v-else
+                    label="Prioridade"
+                    :model-value="
+                      priorityOptions.find((priority) => priority.value === editedTask.priority)
+                        ?.label
+                    "
+                    outlined
+                    readonly
+                    disable
+                  />
                 </div>
               </div>
 
               <q-input
-                v-if="isMyTasks"
+                v-if="isMyTasks || !rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                 label="Responsável"
                 :model-value="authStore.user.username"
                 outlined
                 readonly
                 disable
-                class="q-mb-md"
+                class="q-mb-sm"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-account-star-outline" />
@@ -137,7 +191,7 @@
                 clearable
                 use-input
                 @filter="filterAssignee"
-                class="q-mb-md"
+                class="q-mb-sm"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-account-star-outline" />
@@ -145,6 +199,7 @@
               </q-select>
 
               <q-input
+                v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                 label="Prazo da Tarefa"
                 v-model="deadlineFormatted"
                 readonly
@@ -169,8 +224,18 @@
                   </q-icon>
                 </template>
               </q-input>
+              <q-input
+                v-else
+                label="Prazo da Tarefa"
+                :model-value="deadlineFormatted"
+                outlined
+                readonly
+                disable
+                class="q-mb-md"
+              />
 
               <q-select
+                v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)"
                 label="Tags"
                 v-model="selectedTags"
                 :options="availableTags"
@@ -217,6 +282,23 @@
                   </q-chip>
                 </template>
               </q-select>
+              <q-list v-else class="q-mb-md">
+                <q-item
+                  v-for="tag in editedTask.tags"
+                  :key="tag.tagId"
+                  class="q-mb-sm"
+                  style="min-height: unset; padding: 0"
+                >
+                  <q-chip
+                    :style="{
+                      'background-color': tag.tag.color,
+                      color: getContrastColor(tag.tag.color),
+                    }"
+                  >
+                    {{ tag.tag.name }}
+                  </q-chip>
+                </q-item>
+              </q-list>
 
               <div v-if="isEditing" class="q-mt-md">
                 <q-separator class="q-mb-md" />
@@ -259,7 +341,7 @@
 
       <q-separator />
 
-      <q-card-actions class="dialog-footer">
+      <q-card-actions class="dialog-footer" v-if="rolesStore.hasPermission(RolesEnum.DEVELOPER)">
         <q-btn label="Remover Tarefa" icon="mdi-delete" color="red" @click="deleteTask" flat />
 
         <q-space />
@@ -271,6 +353,11 @@
           type="submit"
           unelevated
         />
+      </q-card-actions>
+      <q-card-actions class="dialog-footer" v-else>
+        <q-space />
+
+        <q-btn label="Fechar" color="grey" v-close-popup flat />
       </q-card-actions>
     </q-form>
   </q-card>
@@ -290,13 +377,14 @@ import { getContrastColor } from 'src/utils/utils';
 import { TagI } from 'src/models/tag.model';
 import TagService from 'src/services/tag.service';
 import { TaskTagI } from 'src/models/task_tag.model';
-import { UserBasicI } from 'src/models/user.model';
 import { VersionI } from 'src/models/version.model';
 import { useApi } from 'src/services/useApi';
 import VersionService from 'src/services/version.service';
 import TaskAttachmentsComponent from '../lists/TaskAttachments.component.vue';
 import TaskCommentsComponent from '../lists/TaskComments.component.vue';
 import { useAuthStore } from 'src/stores/authStore';
+import { useRolesStore } from 'src/stores/rolesStore';
+import { RolesEnum } from 'src/enums/roles.enum';
 
 export default defineComponent({
   props: {
@@ -336,6 +424,7 @@ export default defineComponent({
     const versionSelectId = ref<number | null>(null);
 
     const authStore = useAuthStore();
+    const rolesStore = useRolesStore();
 
     const defaultTask: TaskI = {
       id: null,
@@ -358,6 +447,14 @@ export default defineComponent({
 
     const allAssignees = ref<ProjectParticipationI[]>([]);
     const assigneeOptions = ref<{ label: string; value: number }[]>([]);
+
+    const getTitle = () => {
+      return rolesStore.hasPermission(RolesEnum.DEVELOPER)
+        ? isEditing
+          ? 'Editar Tarefa'
+          : 'Criar Nova Tarefa'
+        : 'Detalhes da Tarefa';
+    };
 
     const statusOptions = ref<{ label: string; value: TaskStatusEnum }[]>(
       TaskStatus.map((status) => ({
@@ -536,7 +633,9 @@ export default defineComponent({
       const formData = buildFormData();
 
       const apiCall = () =>
-        isEditing.value ? TaskService.update(props.taskId, formData) : TaskService.create(formData);
+        isEditing.value
+          ? TaskService.update(props.taskId, formData, props.projectId)
+          : TaskService.create(formData, projectSelectId.value);
 
       await handleApi(apiCall, {
         successMessage: `Tarefa ${isEditing.value ? 'atualizada' : 'criada'} com sucesso!`,
@@ -561,7 +660,7 @@ export default defineComponent({
         },
         persistent: true,
       }).onOk(async () => {
-        await handleApi(() => TaskService.delete(props.taskId), {
+        await handleApi(() => TaskService.delete(props.taskId, props.projectId), {
           successMessage: 'Tarefa excluída com sucesso!',
           errorMessage: 'Ocorreu um erro ao excluir a tarefa.',
         });
@@ -609,6 +708,9 @@ export default defineComponent({
       updateAttachments,
       fetchTask,
       authStore,
+      rolesStore,
+      RolesEnum,
+      getTitle,
     };
   },
 });

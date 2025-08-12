@@ -2,7 +2,7 @@ export enum RolesEnum {
   ADMIN = 1,
   MANAGER = 2,
   DEVELOPER = 3,
-  ANALYST = 4,
+  VIEWER = 4,
 }
 
 export const RolesValues = [
@@ -19,7 +19,7 @@ export const RolesValues = [
     name: 'Desenvolvedor',
   },
   {
-    id: RolesEnum.ANALYST,
-    name: 'Analista',
+    id: RolesEnum.VIEWER,
+    name: 'Visualizador',
   },
 ];

@@ -5,10 +5,18 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: () => import('layouts/AuthLayout.vue'),
-    meta: { requiresAuth: false },
+    meta: { requiresAuth: false, checkPermission: false },
     children: [
-      { path: 'registro', name: 'register', component: () => import('pages/RegisterPage.vue') },
-      { path: '', name: 'login', component: () => import('pages/LoginPage.vue') },
+      {
+        path: 'registro',
+        name: 'register',
+        component: () => import('pages/RegisterPage.vue'),
+      },
+      {
+        path: '',
+        name: 'login',
+        component: () => import('pages/LoginPage.vue'),
+      },
     ],
   },
   {
@@ -16,12 +24,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: 'dashboard', component: () => import('pages/IndexPage.vue'), name: 'Dashboard' },
+      {
+        path: 'dashboard',
+        component: () => import('pages/IndexPage.vue'),
+        name: 'Dashboard',
+        meta: { checkPermission: false },
+      },
       {
         path: 'projetos',
         component: () => import('pages/ProjectsPage.vue'),
         name: 'Projetos',
         meta: {
+          checkPermission: false,
           button: true,
           label: 'Novo Projeto',
           icon: 'mdi-plus',
@@ -70,6 +84,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/MyTasksPage.vue'),
         name: 'Minhas Tarefas',
         meta: {
+          checkPermission: false,
           button: true,
           buttonPermission: RolesEnum.DEVELOPER,
           label: 'Nova Tarefa',
@@ -81,6 +96,9 @@ const routes: RouteRecordRaw[] = [
         path: 'configuracoes',
         component: () => import('pages/SettingsPage.vue'),
         name: 'Configurações',
+        meta: {
+          checkPermission: false,
+        },
       },
     ],
   },

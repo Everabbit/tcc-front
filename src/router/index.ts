@@ -46,6 +46,7 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     const isAuthenticated = authStore.isAuthenticated;
     const requiresAuth = to.meta.requiresAuth;
     const checkPermission = to.meta.checkPermission;
+    const rolesStore = useRolesStore();
 
     if (checkPermission) {
       if (!to.params.projectId) {
@@ -53,9 +54,10 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       }
       const projectId = fromBase64(to.params.projectId as string);
       if (projectId) {
-        const rolesStore = useRolesStore();
         await rolesStore.fetchAndSetRole(Number(projectId));
       }
+    } else {
+      rolesStore.resetRole();
     }
 
     if (requiresAuth && isAuthenticated) {
