@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { ProjectCreateI } from 'src/models/project.model';
+import { ProjectCreateI, ProjectMemberI, ProjectParticipationI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import api from './api';
 import { TagI } from 'src/models/tag.model';
@@ -122,17 +122,43 @@ export default class ProjectService {
     }
   }
 
-  static async addMembers(id: number, members: FormData): Promise<ResponseI> {
+  static async addMember(id: number, member: ProjectParticipationI): Promise<ResponseI> {
     try {
       if (!id) {
         throw Error('Informe um id válido!');
       }
 
-      if (!members) {
-        throw Error('Informe membros válidos!');
+      if (!member) {
+        throw Error('Informe membro válido!');
       }
 
-      const response: AxiosResponse = await api.post(`/projects/addusers/${id}`, members);
+      const response: AxiosResponse = await api.post(`/projects/adduser/${id}`, member);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async updateMember(id: number, member: ProjectParticipationI): Promise<ResponseI> {
+    try {
+      if (!id) {
+        throw Error('Informe um id válido!');
+      }
+
+      if (!member) {
+        throw Error('Informe membro válido!');
+      }
+
+      const response: AxiosResponse = await api.put(`/projects/updateuser/${id}`, member);
 
       if (response.status === 200) {
         return response.data;

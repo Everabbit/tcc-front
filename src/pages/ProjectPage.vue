@@ -12,6 +12,7 @@
       <AddMemberDialogCompoent
         @close="addmembersDialog"
         :project-id="idParse"
+        :member="memberEdit"
         v-if="showDialogMembers"
       ></AddMemberDialogCompoent>
     </q-dialog>
@@ -32,7 +33,7 @@
       <!-- Banner Editável -->
       <div class="project-banner q-mb-lg">
         <input
-          v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+          v-if="useRoles.hasPermission(RolesEnum.ADMIN)"
           type="file"
           ref="bannerInput"
           accept="image/*"
@@ -44,32 +45,30 @@
           v-if="!project.banner"
           class="banner-placeholder"
           :style="`background-color: ${getRandomColor()}; ${
-            useRoles.hasPermission(RolesEnum.MANAGER) ? 'cursor: pointer' : 'cursor: default'
+            useRoles.hasPermission(RolesEnum.ADMIN) ? 'cursor: pointer' : 'cursor: default'
           }`"
           @click="($refs.bannerInput as HTMLInputElement).click()"
         >
           <q-icon
             name="add_photo_alternate"
             size="2rem"
-            v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+            v-if="useRoles.hasPermission(RolesEnum.ADMIN)"
           />
-          <div v-if="useRoles.hasPermission(RolesEnum.MANAGER)">
-            Clique para adicionar uma imagem
-          </div>
+          <div v-if="useRoles.hasPermission(RolesEnum.ADMIN)">Clique para adicionar uma imagem</div>
         </div>
 
         <template v-else>
           <q-img
             :src="project.banner"
             class="editable-banner"
-            :style="`${useRoles.hasPermission(RolesEnum.MANAGER) ? 'cursor: pointer' : 'cursor: default'}`"
+            :style="`${useRoles.hasPermission(RolesEnum.ADMIN) ? 'cursor: pointer' : 'cursor: default'}`"
             @click="($refs.bannerInput as HTMLInputElement).click()"
           >
-            <div class="banner-overlay" v-if="useRoles.hasPermission(RolesEnum.MANAGER)">
+            <div class="banner-overlay" v-if="useRoles.hasPermission(RolesEnum.ADMIN)">
               <q-icon name="edit" size="1.5rem" />
               <div>Clique para trocar a imagem</div>
               <q-btn
-                v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+                v-if="useRoles.hasPermission(RolesEnum.ADMIN)"
                 class="delete-btn"
                 size="15px"
                 icon="mdi-delete"
@@ -92,6 +91,7 @@
               <div class="col-12 col-md-6">
                 <!-- Nome -->
                 <q-input
+                  :readonly="!useRoles.hasPermission(RolesEnum.ADMIN)"
                   label="Nome do Projeto *"
                   v-model="project.name"
                   autofocus
@@ -100,9 +100,9 @@
                   :rules="[required('Nome do projeto')]"
                   hide-bottom-space
                 />
-
                 <!-- Status -->
                 <q-select
+                  :readonly="!useRoles.hasPermission(RolesEnum.ADMIN)"
                   outlined
                   v-model="project.status"
                   :options="status"
@@ -139,7 +139,11 @@
                     :rules="[(val) => typeof val === 'string' || '']"
                   >
                     <template v-slot:append>
-                      <q-icon name="mdi-calendar" class="cursor-pointer">
+                      <q-icon
+                        name="mdi-calendar"
+                        class="cursor-pointer"
+                        v-if="useRoles.hasPermission(RolesEnum.ADMIN)"
+                      >
                         <q-popup-proxy cover transition-show="scale" transition-hide="scale">
                           <q-date
                             v-model="deadline"
@@ -177,6 +181,7 @@
             <!-- Descrição -->
             <div :class="$q.screen.xs ? 'q-mt-md' : ''">
               <q-input
+                :readonly="!useRoles.hasPermission(RolesEnum.ADMIN)"
                 label="Descrição (Opcional)"
                 v-model="project.description"
                 outlined
@@ -196,6 +201,7 @@
           <div class="row items-center justify-between q-mb-sm">
             <div class="text-h6 q-mb-sm">Etiquetas</div>
             <q-btn
+              v-if="useRoles.hasPermission(RolesEnum.DEVELOPER)"
               color="primary"
               icon="add"
               :label="$q.screen.xs ? '' : 'Adicionar Etiqueta'"
@@ -209,7 +215,7 @@
             <q-chip
               v-for="(tag, index) in project.tags"
               :key="index"
-              removable
+              :removable="useRoles.hasPermission(RolesEnum.DEVELOPER)"
               @remove="removeTag(tag.id)"
               :style="{ 'background-color': tag.color, color: getContrastColor(tag.color) }"
               size="md"
@@ -217,6 +223,7 @@
             >
               {{ tag.name }}
               <q-btn
+                v-if="useRoles.hasPermission(RolesEnum.DEVELOPER)"
                 flat
                 dense
                 icon="mdi-pencil"
@@ -235,41 +242,70 @@
           <div class="row items-center justify-between q-mb-sm">
             <div class="text-h6">Membros do Projeto</div>
             <q-btn
+              v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
               color="primary"
               icon="add"
               :label="$q.screen.xs ? '' : 'Adicionar Membro'"
               flat
-              @click="addmembersDialog"
+              @click="addmembersDialog()"
             />
           </div>
           <q-separator />
 
           <div class="q-mt-md">
-            <q-item v-for="membro in project.participation" :key="membro.userId" class="q-mb-sm">
+            <q-item
+              v-for="member in project.participation"
+              :key="member.userId"
+              class="q-mb-sm"
+              :clickable="
+                member.userId !== project.creatorId && useRoles.hasPermission(RolesEnum.MANAGER)
+              "
+              @click="addmembersDialog(member)"
+            >
               <q-item-section avatar>
                 <q-avatar color="primary" text-color="white"
-                  ><img v-if="membro.user.image" :src="membro.user.image" />
-                  <span v-else>{{ getUsernameInitials(membro.user.username) }}</span>
+                  ><img v-if="member.user.image" :src="member.user.image" />
+                  <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
                 </q-avatar>
               </q-item-section>
               <q-item-section>
-                <q-item-label>{{ membro.user.fullName }}</q-item-label>
-                <q-item-label caption>{{ membro.user.username }}</q-item-label>
+                <q-item-label>{{ member.user.fullName }}</q-item-label>
+                <q-item-label caption>{{ member.user.username }}</q-item-label>
               </q-item-section>
               <q-item-section side class="row">
                 <q-badge
-                  :label="roles.find((role) => role.id === membro.role).name"
+                  v-if="member.userId === project.creatorId"
+                  label="Criador"
+                  color="primary"
+                />
+              </q-item-section>
+              <q-item-section side class="row">
+                <q-badge
+                  :label="roles.find((role) => role.id === member.role).name"
                   color="secondary"
                 />
               </q-item-section>
               <q-item-section side class="row">
                 <q-btn
+                  v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+                  :disable="member.userId === project.creatorId"
                   flat
                   dense
                   icon="close"
                   class="q-ml-sm"
-                  @click="removeMember(membro.userId)"
-                />
+                  @click.stop="removeMember(member.userId)"
+                >
+                  <q-tooltip
+                    v-if="member.userId === project.creatorId"
+                    class="bg-red text-body2"
+                    position="top"
+                    anchor="bottom middle"
+                    self="top middle"
+                    :offset="[10, 10]"
+                  >
+                    O criador do projeto não pode ser removido.
+                  </q-tooltip>
+                </q-btn>
               </q-item-section>
             </q-item>
           </div>
@@ -290,6 +326,7 @@
                 @click="toVersions(project.id)"
               />
               <q-btn
+                v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
                 color="primary"
                 icon="mdi-plus"
                 :label="$q.screen.xs ? '' : 'Nova Versão'"
@@ -307,7 +344,7 @@
                 <th>Status</th>
                 <th>Lançamento</th>
                 <th>Progresso</th>
-                <th class="text-right">Ações</th>
+                <th class="text-right" v-if="useRoles.hasPermission(RolesEnum.MANAGER)">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -339,7 +376,7 @@
                   </div>
                   <q-linear-progress :value="getPercentVersionTasks(version.id)" color="primary" />
                 </td>
-                <td class="text-right">
+                <td class="text-right" v-if="useRoles.hasPermission(RolesEnum.MANAGER)">
                   <q-btn flat dense icon="mdi-pencil" @click.stop="createVersion(version.id)" />
                   <q-btn flat dense icon="mdi-delete" @click.stop="removeVersion(version.id)" />
                 </td>
@@ -350,7 +387,14 @@
       </q-card>
     </div>
     <q-page-sticky position="bottom-right" :offset="[18, 18]">
-      <q-btn color="red" icon="mdi-delete" round size="20px" @click="deleteProject">
+      <q-btn
+        color="red"
+        icon="mdi-delete"
+        round
+        size="20px"
+        @click="deleteProject"
+        v-if="useRoles.hasPermission(RolesEnum.ADMIN)"
+      >
         <q-tooltip
           class="bg-red text-body2"
           position="top"
@@ -362,6 +406,7 @@
         </q-tooltip>
       </q-btn>
       <q-btn
+        v-if="useRoles.hasPermission(RolesEnum.ADMIN)"
         class="q-ml-sm"
         color="primary"
         icon="mdi-check"
@@ -391,7 +436,7 @@ import CreateVersionDialog from 'src/components/dialogs/CreateVersionDialog.comp
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { TaskStatusEnum, VersionStatus } from 'src/enums/status.enum';
-import { ProjectI } from 'src/models/project.model';
+import { ProjectI, ProjectParticipationI } from 'src/models/project.model';
 import { TagI } from 'src/models/tag.model';
 import ProjectService from 'src/services/project.service';
 import VersionService from 'src/services/version.service';
@@ -441,6 +486,7 @@ export default {
     const idParse = ref<number>(parseInt(fromBase64(props.projectId)));
     const versionEditId = ref<string>(null);
     const actuallyTag = ref<TagI>(null);
+    const memberEdit = ref<ProjectParticipationI>(null);
 
     async function getProject(): Promise<void> {
       project.value = await handleApi<ProjectI>(() => ProjectService.getOne(idParse.value), {
@@ -593,10 +639,23 @@ export default {
         await getProject();
       });
     }
-    async function addmembersDialog(): Promise<void> {
+    async function addmembersDialog(member: ProjectParticipationI = null): Promise<void> {
+      if (member && member.role <= useRoles.role) {
+        $q.notify({
+          type: 'negative',
+          message: 'Você não tem permissão para editar a função deste membro.',
+          icon: 'mdi-alert-circle',
+        });
+        return;
+      }
       showDialogMembers.value = !showDialogMembers.value;
+      memberEdit.value = null;
       if (showDialogMembers.value === false) {
         await getProject();
+      } else {
+        if (member) {
+          memberEdit.value = clone(member);
+        }
       }
     }
     async function addTagDialog(tag: TagI = null): Promise<void> {
@@ -626,7 +685,7 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        await handleApi(() => TagService.removeTag(tagId), {
+        await handleApi(() => TagService.removeTag(tagId, idParse.value), {
           errorMessage: 'Ocorreu um erro ao remover a etiqueta.',
           successMessage: 'Etiqueta removida com sucesso!',
         });
@@ -727,6 +786,7 @@ export default {
       getPercentVersionTasks,
       useRoles,
       RolesEnum,
+      memberEdit,
     };
   },
 };

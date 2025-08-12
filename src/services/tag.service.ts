@@ -26,12 +26,16 @@ export default class TagService {
     }
   }
 
-  static async removeTag(tagId: number): Promise<ResponseI> {
+  static async removeTag(tagId: number, projectId: number): Promise<ResponseI> {
     try {
       if (!tagId) {
         throw Error('Informe uma etiqueta válida!');
       }
-      const response: AxiosResponse = await api.delete(`/tags/deletetag/${tagId}`);
+      if (!projectId) {
+        throw Error('Informe um ID de projeto válido!');
+      }
+
+      const response: AxiosResponse = await api.delete(`/tags/deletetag/${projectId}/${tagId}`);
 
       if (response.status === 200) {
         return response.data;

@@ -13,6 +13,7 @@
         </div>
         <div>
           <q-btn
+            v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
             flat
             round
             dense
@@ -21,6 +22,7 @@
             @click.stop="openDialog(version.id)"
           />
           <q-btn
+            v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
             flat
             round
             dense
@@ -67,8 +69,10 @@
 </template>
 
 <script lang="ts">
+import { RolesEnum } from 'src/enums/roles.enum';
 import { TaskStatusEnum, VersionStatus, VersionStatusEnum } from 'src/enums/status.enum';
 import { VersionI } from 'src/models/version.model';
+import { useRolesStore } from 'src/stores/rolesStore';
 import { clone, toBase64 } from 'src/utils/transform';
 import { formatDate } from 'src/utils/utils';
 import { PropType } from 'vue';
@@ -84,6 +88,7 @@ export default {
   emits: ['open-version-dialog', 'remove-version'],
   setup(props, { emit }) {
     const $router = useRouter();
+    const useRoles = useRolesStore();
     const statusValues = clone(VersionStatus);
     const completedTasks = props.version.tasks.filter(
       (X) => X.status === TaskStatusEnum.DONE,
@@ -123,6 +128,8 @@ export default {
       completedTasks,
       totalTasks,
       percentTasks,
+      useRoles,
+      RolesEnum,
     };
   },
 };
@@ -145,6 +152,7 @@ export default {
 .version-header {
   display: flex;
   justify-content: space-between;
+  min-height: 35px;
 }
 
 .version-description {

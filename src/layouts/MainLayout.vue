@@ -14,7 +14,7 @@
 
         <q-toolbar-title class="q-py-sm"> {{ $route.name }} </q-toolbar-title>
         <q-btn
-          v-if="button.button"
+          v-if="button.button && rolesStore.hasPermission(button.buttonPermission)"
           class="new-project-btn hover-lift"
           dense
           unelevated
@@ -103,10 +103,12 @@
 </template>
 
 <script lang="ts">
+import { RolesEnum } from 'src/enums/roles.enum';
 import { HeaderButtonI } from 'src/models/extra.model';
 import { menuBasicList, MenuBasicListI } from 'src/models/menu_list.model';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
+import { useRolesStore } from 'src/stores/rolesStore';
 import emitter from 'src/utils/event_bus';
 import { clone } from 'src/utils/transform';
 import { getUsernameInitials } from 'src/utils/utils';
@@ -116,6 +118,7 @@ import { useRouter } from 'vue-router';
 export default {
   setup() {
     const authStore = useAuthStore();
+    const rolesStore = useRolesStore();
     const router = useRouter();
     const leftDrawerOpen = ref(false);
 
@@ -141,6 +144,7 @@ export default {
       clickButton,
       goToRoute,
       getUsernameInitials,
+      rolesStore,
     };
   },
 };

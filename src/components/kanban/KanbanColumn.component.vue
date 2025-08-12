@@ -18,6 +18,7 @@
     </draggable>
 
     <q-btn
+      v-if="useRoles.hasPermission(RolesEnum.DEVELOPER)"
       color="primary"
       icon="mdi-plus"
       label="Adicionar Tarefa"
@@ -32,6 +33,8 @@ import { ColumnI } from 'src/models/extra.model';
 import { PropType } from 'vue';
 import KanbanCardComponent from './KanbanCard.component.vue';
 import draggable from 'vuedraggable';
+import { useRolesStore } from 'src/stores/rolesStore';
+import { RolesEnum } from 'src/enums/roles.enum';
 
 export default {
   props: {
@@ -43,6 +46,8 @@ export default {
   emits: ['task-move', 'open-task-dialog'],
   components: { draggable, KanbanCardComponent },
   setup(props, { emit }) {
+    const useRoles = useRolesStore();
+
     const handleTaskMove = async (changeEvent, newStatusId) => {
       emit('task-move', changeEvent, newStatusId);
     };
@@ -54,6 +59,8 @@ export default {
     return {
       handleTaskMove,
       openTaskDialog,
+      useRoles,
+      RolesEnum,
     };
   },
 };

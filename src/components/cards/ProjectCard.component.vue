@@ -44,7 +44,7 @@
             project.participation[1].user
           "
           size="30px"
-          color="teal"
+          color="primary"
           text-color="white"
           style="margin-left: -8px"
         >

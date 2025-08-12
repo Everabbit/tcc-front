@@ -1,3 +1,4 @@
+import { RolesEnum } from 'src/enums/roles.enum';
 import type { RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
@@ -44,6 +45,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           checkPermission: true,
           button: true,
+          buttonPermission: RolesEnum.MANAGER,
           label: 'Nova Versão',
           icon: 'mdi-plus',
           emitt: 'open-version-dialog',
@@ -57,6 +59,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           checkPermission: true,
           button: true,
+          buttonPermission: RolesEnum.DEVELOPER,
           label: 'Nova Tarefa',
           icon: 'mdi-plus',
           emitt: 'open-task-dialog',
@@ -68,6 +71,7 @@ const routes: RouteRecordRaw[] = [
         name: 'Minhas Tarefas',
         meta: {
           button: true,
+          buttonPermission: RolesEnum.DEVELOPER,
           label: 'Nova Tarefa',
           icon: 'mdi-plus',
           emitt: 'open-task-dialog',

@@ -1,9 +1,9 @@
 <template>
   <q-card class="dialog-card">
-    <q-form @submit="addMembers" ref="form">
+    <q-form @submit="addMember" ref="form">
       <!-- Cabeçalho -->
       <q-card-section class="dialog-header">
-        <div class="text-h6">Adicionar Membros</div>
+        <div class="text-h6">Adicionar Membro</div>
         <q-btn icon="mdi-close" flat round dense v-close-popup />
       </q-card-section>
 
@@ -21,7 +21,7 @@
               option-value="id"
               option-label="username"
               hide-bottom-space
-              v-model="memberData.id"
+              v-model="memberData.userId"
               label="Nome de usuário"
               @filter="getUserList"
               class="col-xs-12 col-sm-12 col-md-6 col-lg-6 col-xl-6"
@@ -47,33 +47,18 @@
                 <q-icon name="mdi-account-tie" />
               </template>
             </q-select>
-
-            <q-btn color="primary" icon="mdi-plus" @click="addMember" />
           </div>
-
-          <!-- Lista de Membros -->
-          <q-list bordered class="q-mt-md">
-            <q-item v-for="(member, index) in memberList" :key="index" class="q-pa-sm">
-              <q-item-section>{{ member.username }}</q-item-section>
-
-              <q-item-section side>
-                <q-badge color="primary">
-                  {{ roles.find((role) => role.id === member.role).name }}
-                </q-badge>
-              </q-item-section>
-
-              <q-item-section side>
-                <q-btn icon="mdi-close" flat dense @click="removeMember(index)" />
-              </q-item-section>
-            </q-item>
-          </q-list>
         </div>
       </q-card-section>
 
       <!-- Rodapé -->
       <q-card-actions align="right" class="dialog-footer">
         <q-btn label="Cancelar" color="grey" v-close-popup flat />
-        <q-btn label="Adicionar Membros" color="primary" type="submit" />
+        <q-btn
+          :label="isEditing ? 'Editar Membro' : 'Adicionar Membro'"
+          color="primary"
+          type="submit"
+        />
       </q-card-actions>
     </q-form>
   </q-card>
@@ -81,15 +66,16 @@
 
 <script lang="ts">
 import { RolesValues } from 'src/enums/roles.enum';
-import { ProjectMemberI } from 'src/models/project.model';
+import { ProjectParticipationI } from 'src/models/project.model';
 import { clone } from 'src/utils/transform';
-import { onMounted, ref } from 'vue';
+import { onMounted, PropType, ref } from 'vue';
 import { required, validateSelect } from '../../utils/validation';
 import { QForm, useQuasar } from 'quasar';
 import ProjectService from 'src/services/project.service';
 import UserService from 'src/services/user.service';
 import { UserBasicI } from 'src/models/user.model';
 import { useApi } from 'src/services/useApi';
+import { useRolesStore } from 'src/stores/rolesStore';
 
 export default {
   props: {
@@ -97,24 +83,38 @@ export default {
       type: Number,
       required: true,
     },
+    member: {
+      type: Object as PropType<ProjectParticipationI>,
+      required: false,
+    },
   },
   emits: ['close'],
   setup(props, { emit }) {
     const $q = useQuasar();
     const form = ref<QForm>(null);
     const { handleApi } = useApi();
+    const useRoles = useRolesStore();
 
-    const roles = clone(RolesValues);
+    const roles = clone(RolesValues).filter((role) => role.id > useRoles.role);
     const usersList = ref<UserBasicI[]>([]);
-    const userListClone = ref<UserBasicI[]>([]);
 
-    const memberData = ref<ProjectMemberI>({
+    const memberData = ref<ProjectParticipationI>({
       role: 2,
     });
-    const memberList = ref<ProjectMemberI[]>([]);
 
-    function addMember() {
-      if (!memberData.value.id) {
+    const isEditing = ref<boolean>(!!props.member);
+
+    if (isEditing.value) {
+      memberData.value = props.member;
+      const user: UserBasicI = {
+        id: props.member.userId,
+        username: props.member.user.username,
+      };
+      usersList.value.push(user);
+    }
+
+    async function addMember(): Promise<void> {
+      if (!memberData.value.userId) {
         $q.notify({
           color: 'negative',
           message: 'Por favor, selecione um usuário da lista.',
@@ -132,7 +132,8 @@ export default {
         return;
       }
 
-      const user = usersList.value.find((u) => u.id === memberData.value.id);
+      const user = usersList.value.find((u) => u.id === memberData.value.userId);
+
       if (!user) {
         $q.notify({
           color: 'negative',
@@ -142,57 +143,28 @@ export default {
         return;
       }
 
-      const isAlreadyMember = memberList.value.some((member) => member.id === user.id);
-      if (isAlreadyMember) {
-        $q.notify({
-          color: 'info',
-          message: `${user.username} já está na lista para ser adicionado.`,
-          icon: 'mdi-information',
-        });
-        memberData.value.id = null;
-        return;
-      }
-
-      memberList.value.push({
-        id: user.id,
-        username: user.username,
-        image: user.image,
+      const memberUser: ProjectParticipationI = {
+        userId: memberData.value.userId,
         role: memberData.value.role,
-      });
+      };
 
-      memberData.value.id = null;
-      memberData.value.role = 2;
-      usersList.value = [];
-    }
-
-    function removeMember(index: number) {
-      memberList.value.splice(index, 1);
-    }
-
-    async function addMembers(): Promise<void> {
-      const isValid: boolean = await form.value.validate();
-
-      if (isValid) {
-        const formData: FormData = new FormData();
-        formData.append('members', JSON.stringify(memberList.value));
-
-        await handleApi(() => ProjectService.addMembers(props.projectId, formData), {
-          successMessage: 'Membros adicionados com sucesso!',
-          errorMessage: 'Ocorreu um erro ao adicionar membros.',
+      if (isEditing.value) {
+        await handleApi(() => ProjectService.updateMember(props.projectId, memberUser), {
+          successMessage: 'Membro atualizado com sucesso!',
+          errorMessage: 'Ocorreu um erro ao atualizr membro.',
         });
-
-        memberList.value = [];
-        memberData.value = {
-          id: null,
-          role: 2,
-        };
-        emit('close');
       } else {
-        $q.notify({
-          type: 'negative',
-          message: 'Corrija os erros no formulário',
+        await handleApi(() => ProjectService.addMember(props.projectId, memberUser), {
+          successMessage: 'Membro adicionado com sucesso!',
+          errorMessage: 'Ocorreu um erro ao adicionar membro.',
         });
       }
+
+      memberData.value = {
+        userId: null,
+        role: 2,
+      };
+      emit('close');
     }
 
     async function getUserList(
@@ -216,16 +188,14 @@ export default {
     }
 
     return {
-      memberList,
       memberData,
       roles,
-      addMember,
       required,
-      removeMember,
-      addMembers,
+      addMember,
       form,
       usersList,
       getUserList,
+      isEditing,
     };
   },
 };
