@@ -246,6 +246,26 @@
           </q-list>
         </q-card>
 
+        <q-card class="q-mb-lg">
+          <q-card-section>
+            <div class="text-h6">Sessão</div>
+          </q-card-section>
+          <q-list bordered separator>
+            <q-item class="q-py-md">
+              <q-item-section>
+                <q-item-label>Sair</q-item-label>
+                <q-item-label caption>
+                  Encerre sua sessão atual. Você precisará fazer login novamente para acessar sua
+                  conta.
+                </q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn label="Sair" color="negative" outline @click="logout" />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card>
+
         <q-card class="danger-zone-card">
           <q-card-section>
             <div class="text-h6">Zona de Risco</div>
@@ -444,6 +464,26 @@ export default {
       authStore.logout();
     };
 
+    const logout = () => {
+      $q.dialog({
+        title: 'Sair',
+        message: 'Tem certeza de que deseja sair?',
+        cancel: {
+          label: 'Cancelar',
+          color: 'primary',
+          flat: true,
+        },
+        ok: {
+          label: 'Sair',
+          color: 'negative',
+          flat: true,
+        },
+        persistent: true,
+      }).onOk(() => {
+        authStore.logout();
+      });
+    };
+
     onMounted(async () => {
       await getUser();
     });
@@ -474,6 +514,7 @@ export default {
       minLength,
       passwordMatch,
       changePassword,
+      logout,
     };
   },
 };
