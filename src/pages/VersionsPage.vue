@@ -84,6 +84,7 @@ import { clone, fromBase64, toBase64 } from 'src/utils/transform';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useApi } from 'src/services/useApi';
 import VersionCardComponent from 'src/components/cards/VersionCard.component.vue';
+import socket from 'src/services/socket.service';
 
 export default {
   components: { CreateVersionDialogComponent, VersionCardComponent },
@@ -221,13 +222,46 @@ export default {
       });
     }
 
+    const setupSocketListeners = () => {
+      socket.on('versionCreated', (version: VersionI) => {
+        versions.value.push(version);
+      });
+
+      socket.on('versionUpdated', (updatedVersion: VersionI) => {
+        const index = versions.value.findIndex((v) => v.id === updatedVersion.id);
+        if (index !== -1) {
+          versions.value[index] = updatedVersion;
+        }
+      });
+
+      socket.on('versionDeleted', (versionId: number) => {
+        versions.value = versions.value.filter((v) => v.id !== versionId);
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('versionCreated');
+      socket.off('versionUpdated');
+      socket.off('versionDeleted');
+    };
+
     onMounted(async () => {
       emitter.on('open-version-dialog', openDialog);
       await getVersions();
+
+      socket.connect();
+
+      socket.emit('joinProjectRoom', idParse.value);
+
+      setupSocketListeners();
     });
 
     onBeforeUnmount(() => {
       emitter.off('open-version-dialog', openDialog);
+
+      removeSocketListeners();
+
+      socket.disconnect();
     });
 
     return {

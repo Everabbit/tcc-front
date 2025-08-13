@@ -1,23 +1,9 @@
 <template>
   <q-page class="row justify-center items-start q-pa-md">
-    <q-dialog v-model="showDialogVersion" :position="$q.screen.xs ? 'bottom' : 'standard'">
-      <CreateVersionDialog
-        @close="createVersion"
-        :project-id="idParse"
-        :version-id="versionEditId"
-        v-if="showDialogVersion"
-      ></CreateVersionDialog>
-    </q-dialog>
-    <q-dialog v-model="showDialogMembers" :position="$q.screen.xs ? 'bottom' : 'standard'">
-      <AddMemberDialogCompoent
-        @close="addmembersDialog"
-        :project-id="idParse"
-        :member="memberEdit"
-        v-if="showDialogMembers"
-      ></AddMemberDialogCompoent>
-    </q-dialog>
-
-    <div class="col-12 col-md-10 col-lg-9" :style="$q.screen.xs ? `margin-bottom: 50px` : ''">
+    <div
+      class="col-12 col-md-10 col-lg-9"
+      :style="$q.screen.sm || $q.screen.xs ? `margin-bottom: 50px` : ''"
+    >
       <div class="q-mb-md">
         <q-btn flat round icon="arrow_back" @click="$router.back()" />
         <span class="text-h5 q-ml-sm">{{ project.name }}</span>
@@ -191,154 +177,10 @@
       <ProjectTagsComponent :project-id="idParse" />
 
       <!-- Membros -->
-      <q-card class="q-mb-md card-project">
-        <q-card-section>
-          <div class="row items-center justify-between q-mb-sm">
-            <div class="text-h6">Membros do Projeto</div>
-            <q-btn
-              v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
-              color="primary"
-              icon="add"
-              :label="$q.screen.xs ? '' : 'Adicionar Membro'"
-              flat
-              @click="addmembersDialog()"
-            />
-          </div>
-          <q-separator />
-
-          <div class="q-mt-md">
-            <q-item
-              v-for="member in project.participation"
-              :key="member.userId"
-              class="q-mb-sm"
-              :clickable="
-                member.userId !== project.creatorId && useRoles.hasPermission(RolesEnum.MANAGER)
-              "
-              @click="addmembersDialog(member)"
-            >
-              <q-item-section avatar>
-                <q-avatar color="primary" text-color="white"
-                  ><img v-if="member.user.image" :src="member.user.image" />
-                  <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
-                </q-avatar>
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ member.user.fullName }}</q-item-label>
-                <q-item-label caption>{{ member.user.username }}</q-item-label>
-              </q-item-section>
-              <q-item-section side class="row">
-                <q-badge
-                  v-if="member.userId === project.creatorId"
-                  label="Criador"
-                  color="primary"
-                />
-              </q-item-section>
-              <q-item-section side class="row">
-                <q-badge
-                  :label="roles.find((role) => role.id === member.role).name"
-                  color="secondary"
-                />
-              </q-item-section>
-              <q-item-section side class="row">
-                <q-btn
-                  v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
-                  :disable="member.userId === project.creatorId"
-                  flat
-                  dense
-                  icon="close"
-                  class="q-ml-sm"
-                  @click.stop="removeMember(member.userId)"
-                >
-                  <q-tooltip
-                    v-if="member.userId === project.creatorId"
-                    class="bg-red text-body2"
-                    position="top"
-                    anchor="bottom middle"
-                    self="top middle"
-                    :offset="[10, 10]"
-                  >
-                    O criador do projeto não pode ser removido.
-                  </q-tooltip>
-                </q-btn>
-              </q-item-section>
-            </q-item>
-          </div>
-        </q-card-section>
-      </q-card>
+      <ProjectMembersComponent :project-id="idParse" :creator-id="project.creatorId" />
 
       <!-- Versões -->
-      <q-card class="q-mb-md card-project">
-        <q-card-section>
-          <div class="row items-center justify-between q-mb-sm">
-            <div class="text-h6">Versões</div>
-            <div>
-              <q-btn
-                color="primary"
-                icon="mdi-diversify"
-                label="Ver versões"
-                flat
-                @click="toVersions(project.id)"
-              />
-              <q-btn
-                v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
-                color="primary"
-                icon="mdi-plus"
-                :label="$q.screen.xs ? '' : 'Nova Versão'"
-                flat
-                @click="createVersion()"
-              />
-            </div>
-          </div>
-          <q-separator />
-
-          <q-markup-table flat class="q-mt-md">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Status</th>
-                <th>Lançamento</th>
-                <th>Progresso</th>
-                <th class="text-right" v-if="useRoles.hasPermission(RolesEnum.MANAGER)">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="version in project.versions"
-                :key="version.id"
-                v-on:click="gotToTasks(version.id)"
-                style="cursor: pointer"
-              >
-                <td>
-                  <div class="text-center">{{ version.name }}</div>
-                </td>
-                <td>
-                  <div class="text-center">
-                    <q-badge
-                      :color="versionStatus.find((status) => status.id === version.status).color"
-                      >{{
-                        versionStatus.find((status) => status.id === version.status).name
-                      }}</q-badge
-                    >
-                  </div>
-                </td>
-                <td>
-                  <div class="text-center">{{ formatDate(version.startDate) }}</div>
-                </td>
-                <td>
-                  <div class="text-center">
-                    <span> {{ getPercentVersionTasks(version.id) * 100 }}% </span>
-                  </div>
-                  <q-linear-progress :value="getPercentVersionTasks(version.id)" color="primary" />
-                </td>
-                <td class="text-right" v-if="useRoles.hasPermission(RolesEnum.MANAGER)">
-                  <q-btn flat dense icon="mdi-pencil" @click.stop="createVersion(version.id)" />
-                  <q-btn flat dense icon="mdi-delete" @click.stop="removeVersion(version.id)" />
-                </td>
-              </tr>
-            </tbody>
-          </q-markup-table>
-        </q-card-section>
-      </q-card>
+      <ProjectVersionsComponent :project-id="idParse" />
     </div>
     <q-page-sticky position="bottom-right" :offset="[18, 18]">
       <q-btn
@@ -384,8 +226,6 @@
 
 <script lang="ts">
 import { QForm, useQuasar } from 'quasar';
-import AddMemberDialogCompoent from 'src/components/dialogs/AddMemberDialog.component.vue';
-import CreateVersionDialog from 'src/components/dialogs/CreateVersionDialog.component.vue';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { TaskStatusEnum, VersionStatus } from 'src/enums/status.enum';
@@ -403,11 +243,13 @@ import { useApi } from 'src/services/useApi';
 import { useRolesStore } from 'src/stores/rolesStore';
 import socket from 'src/services/socket.service';
 import ProjectTagsComponent from 'src/components/lists/ProjectTags.component.vue';
+import ProjectMembersComponent from 'src/components/lists/ProjectMembers.component.vue';
+import ProjectVersionsComponent from 'src/components/lists/ProjectVersions.component.vue';
 
 export default {
   components: {
-    CreateVersionDialog,
-    AddMemberDialogCompoent,
+    ProjectVersionsComponent,
+    ProjectMembersComponent,
     ProjectTagsComponent,
   },
   props: {
@@ -427,17 +269,11 @@ export default {
       status: ProjectStatus.UNACTIVE,
       progress: 0,
     });
-    const roles = clone(RolesValues);
-    const showDialogVersion = ref<boolean>(false);
-    const showDialogMembers = ref<boolean>(false);
-    const versionStatus = clone(VersionStatus);
     const deadline = ref<string>(null);
     const status = clone(ProjectStatusValues);
     const form = ref<QForm>(null);
     const bannerFile = ref<File>(null);
     const idParse = ref<number>(parseInt(fromBase64(props.projectId)));
-    const versionEditId = ref<string>(null);
-    const memberEdit = ref<ProjectParticipationI>(null);
 
     async function getProject(): Promise<void> {
       project.value = await handleApi<ProjectI>(() => ProjectService.getOne(idParse.value), {
@@ -553,120 +389,8 @@ export default {
       return pastelColors[randomIndex];
     }
 
-    async function createVersion(id: number | null = null): Promise<void> {
-      if (id) {
-        versionEditId.value = toBase64(id.toString());
-      } else {
-        versionEditId.value = null;
-      }
-      showDialogVersion.value = !showDialogVersion.value;
-      if (showDialogVersion.value === false) {
-        await getProject();
-      }
-    }
-    function toVersions(id: number) {
-      $router.push('/p/projetos/versoes/' + toBase64(id.toString()));
-    }
-    async function removeVersion(id: number): Promise<void> {
-      $q.dialog({
-        title: 'Confirmar Remoção',
-        message: 'Tem certeza de que deseja remover permanentemente esta versão?',
-        cancel: {
-          label: 'Não',
-          color: 'grey',
-          flat: true,
-        },
-        ok: {
-          label: 'Sim',
-          color: 'red',
-        },
-        persistent: false,
-      }).onOk(async () => {
-        await handleApi(() => VersionService.delete(id, idParse.value), {
-          errorMessage: 'Ocorreu um erro ao remover a versão.',
-          successMessage: 'Versão removida com sucesso!',
-        });
-
-        await getProject();
-      });
-    }
-    async function addmembersDialog(member: ProjectParticipationI = null): Promise<void> {
-      if (member && member.role <= useRoles.role) {
-        $q.notify({
-          type: 'negative',
-          message: 'Você não tem permissão para editar a função deste membro.',
-          icon: 'mdi-alert-circle',
-        });
-        return;
-      }
-      showDialogMembers.value = !showDialogMembers.value;
-      memberEdit.value = null;
-      if (showDialogMembers.value === false) {
-        await getProject();
-      } else {
-        if (member) {
-          memberEdit.value = clone(member);
-        }
-      }
-    }
-
-    function gotToTasks(id: number) {
-      const projectId = props.projectId;
-      const versionId = toBase64(id.toString());
-      $router.push(`/p/projetos/versoes/tarefas/${projectId}/${versionId}`);
-    }
-
-    function removeMember(index: number): void {
-      let member: string = project.value.participation.find((member) => member.userId === index)
-        .user.username;
-      $q.dialog({
-        title: 'Confirmar Remoção',
-        message: `Tem certeza de que deseja remover ${member} do projeto?`,
-        cancel: {
-          label: 'Não',
-          color: 'grey',
-          flat: true,
-        },
-        ok: {
-          label: 'Sim',
-          color: 'primary',
-        },
-        persistent: false,
-      }).onOk(async () => {
-        await handleApi(() => ProjectService.removeMember(idParse.value, index), {
-          errorMessage: 'Ocorreu um erro ao remover o membro.',
-          successMessage: 'Membro removido com sucesso!',
-        });
-
-        await getProject();
-      });
-    }
-
-    function getTotalVersionTasks(versionId: number): number {
-      const version = project.value.versions.find((v) => v.id === versionId);
-      if (!version) {
-        return 0;
-      }
-      return version.tasks.length;
-    }
-
-    function getCompletedVersionTasks(versionId: number): number {
-      const version = project.value.versions.find((v) => v.id === versionId);
-      if (!version) {
-        return 0;
-      }
-      return version.tasks.filter((task) => task.status === TaskStatusEnum.DONE).length;
-    }
-
-    function getPercentVersionTasks(versionId: number): number {
-      const completed = getCompletedVersionTasks(versionId);
-      const total = getTotalVersionTasks(versionId);
-      return total > 0 ? completed / total : 0;
-    }
-
     const setupSocketListeners = () => {
       socket.on('projectUpdated', (updatedProject: ProjectI) => {
-        console.log('Project updated from socket:', updatedProject);
         project.value = updatedProject;
       });
     };
@@ -692,17 +416,10 @@ export default {
     });
 
     return {
-      versionStatus,
       project,
       getRandomColor,
       formatDate,
       getUsernameInitials,
-      roles,
-      showDialogVersion,
-      showDialogMembers,
-      addmembersDialog,
-      createVersion,
-      removeMember,
       formattedData,
       deadline,
       required,
@@ -713,15 +430,9 @@ export default {
       handleBannerDelete,
       deleteProject,
       idParse,
-      versionEditId,
-      toVersions,
-      removeVersion,
       getContrastColor,
-      gotToTasks,
-      getPercentVersionTasks,
       useRoles,
       RolesEnum,
-      memberEdit,
     };
   },
 };

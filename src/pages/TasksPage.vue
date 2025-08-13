@@ -72,6 +72,7 @@ import { TaskI } from 'src/models/task.model';
 import TaskService from 'src/services/task.service';
 import { useApi } from 'src/services/useApi';
 import { ProjectParticipationI } from 'src/models/project.model';
+import socket from 'src/services/socket.service';
 
 export default {
   props: {
@@ -193,14 +194,55 @@ export default {
       taskStatusId.value = TaskStatusEnum.PENDING;
     };
 
+    const setupSocketListeners = () => {
+      socket.on('taskCreated', (task: TaskI) => {
+        allTasks.value.push(task);
+      });
+
+      socket.on('taskUpdated', (updatedTask: TaskI) => {
+        const index = allTasks.value.findIndex((t) => t.id === updatedTask.id);
+        if (index !== -1) {
+          allTasks.value[index] = updatedTask;
+        }
+      });
+
+      socket.on('taskDeleted', (taskId: number) => {
+        allTasks.value = allTasks.value.filter((t) => t.id !== taskId);
+      });
+
+      socket.on('taskStatusUpdated', (updatedTask: TaskI) => {
+        const index = allTasks.value.findIndex((t) => t.id === updatedTask.id);
+        if (index !== -1) {
+          allTasks.value[index].status = updatedTask.status;
+        }
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('taskCreated');
+      socket.off('taskUpdated');
+      socket.off('taskDeleted');
+      socket.off('taskStatusUpdated');
+    };
+
     onMounted(async () => {
       emitter.on('open-task-dialog', openTaskDialog);
       await fetchTasks();
       await fetchUsers();
+
+      socket.connect();
+
+      socket.emit('joinProjectRoom', projectId.value);
+
+      setupSocketListeners();
     });
 
     onBeforeMount(() => {
       emitter.off('open-task-dialog', openTaskDialog);
+
+      removeSocketListeners();
+
+      socket.disconnect();
     });
 
     return {

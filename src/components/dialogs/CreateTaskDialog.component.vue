@@ -634,7 +634,7 @@ export default defineComponent({
 
       const apiCall = () =>
         isEditing.value
-          ? TaskService.update(props.taskId, formData, props.projectId)
+          ? TaskService.update(props.taskId, formData, projectSelectId.value)
           : TaskService.create(formData, projectSelectId.value);
 
       await handleApi(apiCall, {
@@ -660,7 +660,7 @@ export default defineComponent({
         },
         persistent: true,
       }).onOk(async () => {
-        await handleApi(() => TaskService.delete(props.taskId, props.projectId), {
+        await handleApi(() => TaskService.delete(props.taskId, projectSelectId.value), {
           successMessage: 'Tarefa excluída com sucesso!',
           errorMessage: 'Ocorreu um erro ao excluir a tarefa.',
         });

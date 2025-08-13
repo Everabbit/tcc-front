@@ -12,6 +12,8 @@ export interface VersionI {
   startDate: Date;
   endDate?: Date;
   githubBranch?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   tasks: TaskI[];
 }
 

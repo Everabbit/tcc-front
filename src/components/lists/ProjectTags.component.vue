@@ -52,13 +52,14 @@
 import { RolesEnum } from 'src/enums/roles.enum';
 import { TagI } from 'src/models/tag.model';
 import { useRolesStore } from 'src/stores/rolesStore';
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { clone } from 'src/utils/transform';
 import { useQuasar } from 'quasar';
 import { useApi } from 'src/services/useApi';
 import TagService from 'src/services/tag.service';
 import { getContrastColor } from 'src/utils/utils';
 import AddTagDialogComponent from '../dialogs/AddTagDialog.component.vue';
+import socket from 'src/services/socket.service';
 
 export default {
   components: {
@@ -124,8 +125,41 @@ export default {
       tags.value.splice(0, tags.value.length, ...tagsResponse);
     }
 
+    const setupSocketListeners = () => {
+      socket.on('tagCreated', (tagCreated: TagI) => {
+        tags.value.push(tagCreated);
+      });
+      socket.on('tagUpdated', (tagUpdated: TagI) => {
+        const index = tags.value.findIndex((tag) => tag.id === tagUpdated.id);
+        if (index !== -1) {
+          tags.value[index] = tagUpdated;
+        }
+      });
+      socket.on('tagDeleted', (tagId: number) => {
+        tags.value = tags.value.filter((tag) => tag.id !== tagId);
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('tagCreated');
+      socket.off('tagUpdated');
+      socket.off('tagDeleted');
+    };
+
     onMounted(async () => {
       await getTags();
+
+      socket.connect();
+
+      socket.emit('joinProjectRoom', props.projectId);
+
+      setupSocketListeners();
+    });
+
+    onUnmounted(() => {
+      removeSocketListeners();
+
+      socket.disconnect();
     });
 
     return {

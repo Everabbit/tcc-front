@@ -48,11 +48,13 @@ import { PriorityEnum } from 'src/enums/task_priority.enum';
 import TaskService from 'src/services/task.service';
 import { clone } from 'src/utils/transform';
 import { useApi } from 'src/services/useApi';
+import socket from 'src/services/socket.service';
+import { useAuthStore } from 'src/stores/authStore';
 
 export default {
   components: { CreateTaskDialogComponent, KanbanBoardComponent },
   setup() {
-    const $q = useQuasar();
+    const authStore = useAuthStore();
     const { handleApi } = useApi();
     const columns = ref<ColumnI[]>(
       TaskStatus.map((status) => ({
@@ -133,13 +135,55 @@ export default {
       taskStatusId.value = TaskStatusEnum.PENDING;
     };
 
+    const setupSocketListeners = () => {
+      socket.on('taskCreatedUser', (task: TaskI) => {
+        allTasks.value.push(task);
+      });
+
+      socket.on('taskUpdatedUser', (updatedTask: TaskI) => {
+        console.log('aaaaaaaaa');
+        const index = allTasks.value.findIndex((t) => t.id === updatedTask.id);
+        if (index !== -1) {
+          allTasks.value[index] = updatedTask;
+        }
+      });
+
+      socket.on('taskDeletedUser', (taskId: number) => {
+        allTasks.value = allTasks.value.filter((t) => t.id !== taskId);
+      });
+
+      socket.on('taskStatusUpdatedUser', (updatedTask: TaskI) => {
+        const index = allTasks.value.findIndex((t) => t.id === updatedTask.id);
+        if (index !== -1) {
+          allTasks.value[index].status = updatedTask.status;
+        }
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('taskCreatedUser');
+      socket.off('taskUpdatedUser');
+      socket.off('taskDeletedUser');
+      socket.off('taskStatusUpdatedUser');
+    };
+
     onMounted(async () => {
       await fetchTasks();
       emitter.on('open-task-dialog', openTaskDialog);
+
+      socket.connect();
+
+      socket.emit('joinUserRoom', authStore.user.id);
+
+      setupSocketListeners();
     });
 
     onBeforeMount(() => {
       emitter.off('open-task-dialog', openTaskDialog);
+
+      removeSocketListeners();
+
+      socket.disconnect();
     });
     return {
       openTaskDialog,
