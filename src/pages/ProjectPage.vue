@@ -16,14 +16,7 @@
         v-if="showDialogMembers"
       ></AddMemberDialogCompoent>
     </q-dialog>
-    <q-dialog v-model="showDialogTags" :position="$q.screen.xs ? 'bottom' : 'standard'">
-      <AddTagDialogComponent
-        @close="addTagDialog"
-        :project-id="idParse"
-        :tag="actuallyTag"
-        v-if="showDialogTags"
-      ></AddTagDialogComponent>
-    </q-dialog>
+
     <div class="col-12 col-md-10 col-lg-9" :style="$q.screen.xs ? `margin-bottom: 50px` : ''">
       <div class="q-mb-md">
         <q-btn flat round icon="arrow_back" @click="$router.back()" />
@@ -195,46 +188,7 @@
       </q-card>
 
       <!-- Tags -->
-
-      <q-card class="q-mb-md card-project">
-        <q-card-section>
-          <div class="row items-center justify-between q-mb-sm">
-            <div class="text-h6 q-mb-sm">Etiquetas</div>
-            <q-btn
-              v-if="useRoles.hasPermission(RolesEnum.DEVELOPER)"
-              color="primary"
-              icon="add"
-              :label="$q.screen.xs ? '' : 'Adicionar Etiqueta'"
-              flat
-              @click="addTagDialog()"
-            />
-          </div>
-
-          <q-separator />
-          <div class="q-mt-md">
-            <q-chip
-              v-for="(tag, index) in project.tags"
-              :key="index"
-              :removable="useRoles.hasPermission(RolesEnum.DEVELOPER)"
-              @remove="removeTag(tag.id)"
-              :style="{ 'background-color': tag.color, color: getContrastColor(tag.color) }"
-              size="md"
-              class="q-mr-sm q-mb-sm"
-            >
-              {{ tag.name }}
-              <q-btn
-                v-if="useRoles.hasPermission(RolesEnum.DEVELOPER)"
-                flat
-                dense
-                icon="mdi-pencil"
-                class="q-ml-sm"
-                size="sm"
-                @click="addTagDialog(tag)"
-              />
-            </q-chip>
-          </div>
-        </q-card-section>
-      </q-card>
+      <ProjectTagsComponent :project-id="idParse" />
 
       <!-- Membros -->
       <q-card class="q-mb-md card-project">
@@ -431,31 +385,30 @@
 <script lang="ts">
 import { QForm, useQuasar } from 'quasar';
 import AddMemberDialogCompoent from 'src/components/dialogs/AddMemberDialog.component.vue';
-import AddTagDialogComponent from 'src/components/dialogs/AddTagDialog.component.vue';
 import CreateVersionDialog from 'src/components/dialogs/CreateVersionDialog.component.vue';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
 import { TaskStatusEnum, VersionStatus } from 'src/enums/status.enum';
 import { ProjectI, ProjectParticipationI } from 'src/models/project.model';
-import { TagI } from 'src/models/tag.model';
 import ProjectService from 'src/services/project.service';
 import VersionService from 'src/services/version.service';
 import { clone, fromBase64, toBase64 } from 'src/utils/transform';
 import { getContrastColor } from 'src/utils/utils';
 import { required } from 'src/utils/validation';
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { formatDate, getUsernameInitials } from 'src/utils/utils';
-import TagService from 'src/services/tag.service';
 import { useApi } from 'src/services/useApi';
 import { useRolesStore } from 'src/stores/rolesStore';
+import socket from 'src/services/socket.service';
+import ProjectTagsComponent from 'src/components/lists/ProjectTags.component.vue';
 
 export default {
   components: {
     CreateVersionDialog,
     AddMemberDialogCompoent,
-    AddTagDialogComponent,
+    ProjectTagsComponent,
   },
   props: {
     projectId: {
@@ -477,7 +430,6 @@ export default {
     const roles = clone(RolesValues);
     const showDialogVersion = ref<boolean>(false);
     const showDialogMembers = ref<boolean>(false);
-    const showDialogTags = ref<boolean>(false);
     const versionStatus = clone(VersionStatus);
     const deadline = ref<string>(null);
     const status = clone(ProjectStatusValues);
@@ -485,7 +437,6 @@ export default {
     const bannerFile = ref<File>(null);
     const idParse = ref<number>(parseInt(fromBase64(props.projectId)));
     const versionEditId = ref<string>(null);
-    const actuallyTag = ref<TagI>(null);
     const memberEdit = ref<ProjectParticipationI>(null);
 
     async function getProject(): Promise<void> {
@@ -658,41 +609,6 @@ export default {
         }
       }
     }
-    async function addTagDialog(tag: TagI = null): Promise<void> {
-      showDialogTags.value = !showDialogTags.value;
-      if (showDialogTags.value === false) {
-        await getProject();
-      } else {
-        if (tag) {
-          actuallyTag.value = clone(tag);
-        } else {
-          actuallyTag.value = null;
-        }
-      }
-    }
-    async function removeTag(tagId: number): Promise<void> {
-      $q.dialog({
-        title: 'Confirmar Remoção',
-        message: 'Tem certeza de que deseja remover permanentemente esta etiqueta?',
-        cancel: {
-          label: 'Não',
-          color: 'grey',
-          flat: true,
-        },
-        ok: {
-          label: 'Sim',
-          color: 'red',
-        },
-        persistent: false,
-      }).onOk(async () => {
-        await handleApi(() => TagService.removeTag(tagId, idParse.value), {
-          errorMessage: 'Ocorreu um erro ao remover a etiqueta.',
-          successMessage: 'Etiqueta removida com sucesso!',
-        });
-
-        await getProject();
-      });
-    }
 
     function gotToTasks(id: number) {
       const projectId = props.projectId;
@@ -748,8 +664,31 @@ export default {
       return total > 0 ? completed / total : 0;
     }
 
+    const setupSocketListeners = () => {
+      socket.on('projectUpdated', (updatedProject: ProjectI) => {
+        console.log('Project updated from socket:', updatedProject);
+        project.value = updatedProject;
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('projectUpdated');
+    };
+
     onMounted(async () => {
       await getProject();
+
+      socket.connect();
+
+      socket.emit('joinProjectRoom', idParse.value);
+
+      setupSocketListeners();
+    });
+
+    onUnmounted(() => {
+      removeSocketListeners();
+
+      socket.disconnect();
     });
 
     return {
@@ -777,11 +716,7 @@ export default {
       versionEditId,
       toVersions,
       removeVersion,
-      showDialogTags,
-      addTagDialog,
       getContrastColor,
-      removeTag,
-      actuallyTag,
       gotToTasks,
       getPercentVersionTasks,
       useRoles,

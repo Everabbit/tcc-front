@@ -91,8 +91,7 @@
 import { useQuasar } from 'quasar';
 import { RolesValues } from 'src/enums/roles.enum';
 import { CommentI } from 'src/models/comment.model';
-import { UserBasicI } from 'src/models/user.model';
-import TaskService from 'src/services/task.service';
+import CommentService from 'src/services/comment.service';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
 import { useRolesStore } from 'src/stores/rolesStore';
@@ -147,7 +146,7 @@ export default {
       };
 
       if (props.isEditing) {
-        await handleApi<CommentI>(() => TaskService.updateComment(editedComment), {
+        await handleApi<CommentI>(() => CommentService.update(editedComment), {
           errorMessage: 'Ocorreu um erro ao atualizar o comentário.',
           successMessage: 'Comentário atualizado com sucesso!',
         });
@@ -165,7 +164,7 @@ export default {
         persistent: true,
       }).onOk(async () => {
         if (props.isEditing) {
-          await handleApi<null>(() => TaskService.removeComment(commentToRemove.id), {
+          await handleApi<null>(() => CommentService.delete(commentToRemove.id), {
             errorMessage: 'Ocorreu um erro ao remover o comentário.',
             successMessage: 'Comentário removido com sucesso!',
           });
@@ -189,7 +188,7 @@ export default {
         updatedAt: undefined,
       };
       if (props.isEditing) {
-        await handleApi<CommentI>(() => TaskService.addComment(newComment), {
+        await handleApi<CommentI>(() => CommentService.create(newComment), {
           errorMessage: 'Ocorreu um erro ao adicionar o comentário.',
         });
         emit('comments-changed');
