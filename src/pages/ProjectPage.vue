@@ -266,7 +266,7 @@ export default {
     const project = ref<ProjectI>({
       creatorId: 0,
       name: '',
-      status: ProjectStatus.UNACTIVE,
+      status: ProjectStatus.PLAN,
       progress: 0,
     });
     const deadline = ref<string>(null);
