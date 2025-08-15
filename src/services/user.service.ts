@@ -11,6 +11,49 @@ import { AxiosResponse } from 'axios';
 import { toBase64 } from 'src/utils/transform';
 
 export default class UserService {
+  static async emailRequest(email: string): Promise<ResponseI> {
+    try {
+      if (!email) {
+        throw Error('Informe um email válido!');
+      }
+      email = toBase64(email);
+      const response: AxiosResponse = await api.post(`/users/emailrequest`, { email });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async emailRequestAccept(token: string): Promise<ResponseI> {
+    try {
+      if (!token) {
+        throw Error('Informe um token válido!');
+      }
+      const response: AxiosResponse = await api.get(`/users/emailrequest/accept/${token}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async register(user: UserRegisterI): Promise<ResponseI> {
     try {
       if (!user || !user.email || !user.password || !user.fullName) {

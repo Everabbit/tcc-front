@@ -10,12 +10,18 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'registro',
         name: 'register',
-        component: () => import('pages/RegisterEmailPage.vue'),
+        component: () => import('pages/auth/RegisterEmailPage.vue'),
+      },
+      {
+        path: 'confirmarregistro/:token',
+        name: 'confirmregister',
+        props: true,
+        component: () => import('pages/auth/RegisterPage.vue'),
       },
       {
         path: '',
         name: 'login',
-        component: () => import('pages/LoginPage.vue'),
+        component: () => import('pages/auth/LoginPage.vue'),
       },
     ],
   },

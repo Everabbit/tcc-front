@@ -5,7 +5,7 @@
       class="row flex items-stretch justify-center q-ma-md"
       style="min-width: 60vw"
     >
-      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
+      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg">
         <q-card flat>
           <q-card-section>
             <span class="text-primary flex justify-center items-center text-h5">
@@ -13,16 +13,28 @@
             </span>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
-            <span class="text-h4 text-center text-bold">Solicitação de nova conta</span>
+            <span class="text-h4 text-center text-bold">Criar nova conta</span>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
-            <span class="text-subtitle1 text-center"
-              >Preencha o seu e-mail abaixo para criar sua conta</span
-            >
+            <span class="text-subtitle1 text-center">Preencha os campos abaixo para começar</span>
           </q-card-section>
           <q-card-section>
             <q-form @submit="createAccount" ref="form">
               <q-input
+                filled
+                label="Digite seu nome completo"
+                label-color="white"
+                type="text"
+                v-model="user.fullName"
+                class="q-my-sm"
+                :rules="[required('Nome completo')]"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-account" />
+                </template>
+              </q-input>
+              <q-input
+                readonly
                 filled
                 label="Email"
                 label-color="white"
@@ -35,12 +47,69 @@
                   <q-icon name="mdi-email" />
                 </template>
               </q-input>
+              <q-input
+                filled
+                label="Nome de usuário"
+                label-color="white"
+                v-model="user.username"
+                type="text"
+                class="q-my-sm"
+                :rules="[required('Nome de usuário'), username]"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-account-circle" />
+                </template>
+              </q-input>
+              <q-input
+                filled
+                label="Senha"
+                label-color="white"
+                v-model="user.password"
+                :type="isPasswordVisible ? 'text' : 'password'"
+                class="q-my-sm"
+                :rules="[required('Senha'), minLength('Senha', 8)]"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-lock" />
+                </template>
+                <template v-slot:append>
+                  <q-icon
+                    :name="isPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                    class="cursor-pointer"
+                    @click="togglePasswordVisibility"
+                  />
+                </template>
+              </q-input>
+              <q-input
+                filled
+                label="Confirmar senha"
+                label-color="white"
+                v-model="confirmPassowrd"
+                :type="isConfirmPasswordVisible ? 'text' : 'password'"
+                class="q-my-sm"
+                :rules="[
+                  required('Confirmação de senha'),
+                  passwordMatch(user.password, confirmPassowrd),
+                  minLength('Senha', 8),
+                ]"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-lock" />
+                </template>
+                <template v-slot:append>
+                  <q-icon
+                    :name="isConfirmPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                    class="cursor-pointer"
+                    @click="toggleConfirmPasswordVisibility"
+                  />
+                </template>
+              </q-input>
               <q-checkbox
                 v-model="check"
-                label="Eu concordo em receber e-mails de confirmação do sistema."
+                label="Eu concordo com os Termos de Serviço e Política de Privacidade"
               ></q-checkbox>
               <div v-if="!check && checkVerify" class="text-negative q-ml-md">
-                É necessário aceitar os e-mails para continuar!
+                É necessário aceitar os termos!
               </div>
               <q-btn
                 class="full-width q-my-md"
@@ -61,7 +130,7 @@
       </div>
       <div class="col-6" v-if="$q.screen.md || $q.screen.lg || $q.screen.xl">
         <q-img
-          src="../assets/auth_image.png"
+          src="../../assets/auth_image.png"
           class="rounded-borders"
           height="100%"
           style="position: relative"
@@ -89,18 +158,25 @@ import {
   passwordMatch,
   checkboxRequired,
   username,
-} from '../utils/validation';
+} from '../../utils/validation';
 import type { UserRegisterI } from 'src/models/user.model';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import UserService from 'src/services/user.service';
 import { clone } from 'src/utils/transform';
 import { useRouter } from 'vue-router';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
 import { AuthI } from 'src/models/auth.model';
+import { EmailRequestI } from 'src/models/email_request.model';
 
 export default {
-  setup() {
+  props: {
+    token: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
     const $q = useQuasar();
     const router = useRouter();
     const authStore = useAuthStore();
@@ -146,6 +222,28 @@ export default {
         });
       }
     }
+
+    async function verifyToken(): Promise<void> {
+      if (props.token) {
+        const data = await handleApi<EmailRequestI>(
+          () => UserService.emailRequestAccept(props.token),
+          {
+            errorMessage: 'Token inválido ou expirado.',
+          },
+        );
+
+        if (data) {
+          console.log(data);
+          user.value.email = data.email;
+        } else {
+          router.push('/registro');
+        }
+      }
+    }
+
+    onMounted(async () => {
+      await verifyToken();
+    });
 
     return {
       user,

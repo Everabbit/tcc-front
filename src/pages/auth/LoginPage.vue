@@ -122,7 +122,7 @@
       </div>
       <div class="col-6" v-if="$q.screen.md || $q.screen.lg || $q.screen.xl">
         <q-img
-          src="../assets/auth_image.png"
+          src="../../assets/auth_image.png"
           class="rounded-borders"
           height="100%"
           style="position: relative"
@@ -143,7 +143,13 @@
 <script lang="ts">
 import type { QForm } from 'quasar';
 import { useQuasar } from 'quasar';
-import { required, email, minLength, passwordMatch, checkboxRequired } from '../utils/validation';
+import {
+  required,
+  email,
+  minLength,
+  passwordMatch,
+  checkboxRequired,
+} from '../../utils/validation';
 import type { UserBasicI, UserLoginI } from 'src/models/user.model';
 import { onMounted, ref } from 'vue';
 import UserService from 'src/services/user.service';
