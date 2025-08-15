@@ -30,35 +30,52 @@
           class="q-mb-md"
         />
 
-        <!-- Preencher deadline -->
-        <div class="q-mb-md">
-          <q-input
-            label="Prazo do Projeto"
-            v-model="formattedData"
-            readonly
-            outlined
-            mask="##/##/####"
-            :rules="[(val) => typeof val === 'string' || '']"
-            class="q-mt-sm"
-          >
-            <template v-slot:append>
-              <q-icon name="mdi-calendar" class="cursor-pointer">
-                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                  <q-date
-                    v-model="projectCreateData.deadline"
-                    minimal
-                    color="primary"
-                    text-color="white"
-                    today-btn
-                  >
-                    <div class="row items-center justify-end q-gutter-sm">
-                      <q-btn label="OK" color="primary" flat v-close-popup />
-                    </div>
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
+        <div class="row">
+          <!-- Preencher deadline -->
+          <div class="q-pr-xs col-12 col-md-6 col-lg-6">
+            <q-input
+              label="Prazo do Projeto"
+              v-model="formattedData"
+              readonly
+              outlined
+              mask="##/##/####"
+              :rules="[(val) => typeof val === 'string' || '']"
+            >
+              <template v-slot:append>
+                <q-icon name="mdi-calendar" class="cursor-pointer">
+                  <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-date
+                      v-model="projectCreateData.deadline"
+                      minimal
+                      color="primary"
+                      text-color="white"
+                      today-btn
+                    >
+                      <div class="row items-center justify-end q-gutter-sm">
+                        <q-btn label="OK" color="primary" flat v-close-popup />
+                      </div>
+                    </q-date>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+          </div>
+
+          <!-- Preencher Status -->
+          <div class="q-mb-md q-pl-xs col-12 col-md-6 col-lg-6">
+            <q-select
+              label="Status do Projeto *"
+              v-model="projectCreateData.status"
+              :options="statusValues"
+              emit-value
+              map-options
+              outlined
+              option-value="id"
+              option-label="name"
+              :rules="[required('Status do projeto')]"
+              hide-bottom-space
+            />
+          </div>
         </div>
 
         <!-- Upload de Banner -->
@@ -157,7 +174,7 @@ import ProjectService from 'src/services/project.service';
 import UserService from 'src/services/user.service';
 import { UserBasicI } from 'src/models/user.model';
 import { useApi } from 'src/services/useApi';
-import { get } from 'http';
+import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
 
 export default {
   emits: ['close'],
@@ -170,8 +187,10 @@ export default {
       name: '',
       deadline: '',
       description: '',
+      status: ProjectStatus.PLAN,
       members: [],
     });
+    const statusValues = clone(ProjectStatusValues);
     const bannerFile = ref<File>(null);
     const roles = clone(RolesValues);
     const usersList = ref<UserBasicI[]>([]);
@@ -271,6 +290,7 @@ export default {
           name: '',
           deadline: '',
           description: '',
+          status: ProjectStatus.PLAN,
           members: [],
         };
         bannerFile.value = null;
@@ -321,6 +341,7 @@ export default {
       form,
       bannerFile,
       usersList,
+      statusValues,
     };
   },
 };

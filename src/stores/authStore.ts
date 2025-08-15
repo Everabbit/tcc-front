@@ -83,9 +83,9 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    logout() {
+    async logout() {
       const settingsStore = useSettingsStore();
-      this.router.push('/');
+      await UserService.logout();
 
       this.user = null;
       this.token = null;

@@ -70,7 +70,7 @@
           size="6px"
           style="width: 80px"
         />
-        <span class="text-caption text-grey">{{ project.progress * 100 }}%</span>
+        <span class="text-caption text-grey">{{ getFixedProgress(project.progress) }}%</span>
       </div>
     </q-card-actions>
   </q-card>
@@ -128,6 +128,14 @@ export default {
       return StatusValues.find((X) => X.id === status).color;
     }
 
+    function getFixedProgress(progress): string {
+      const prog = progress * 100;
+      if (Number.isInteger(progress)) {
+        return prog.toFixed(0);
+      }
+      return prog.toFixed(2);
+    }
+
     return {
       toVersions,
       toProject,
@@ -136,6 +144,7 @@ export default {
       getProjectStatusColor,
       formatDate,
       getUsernameInitials,
+      getFixedProgress,
     };
   },
 };

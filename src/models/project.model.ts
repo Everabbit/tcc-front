@@ -35,6 +35,7 @@ export interface ProjectCreateI {
   name: string;
   description?: string;
   deadline?: string;
+  status: ProjectStatus;
   members?: ProjectMemberI[];
 }
 

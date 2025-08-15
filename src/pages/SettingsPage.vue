@@ -388,6 +388,8 @@ export default {
         successMessage: 'Imagem de perfil atualizada com sucesso!',
       });
 
+      authStore.fetchUser();
+
       if (response) {
         user.value.image = response.image;
       }
@@ -407,6 +409,8 @@ export default {
             successMessage: 'Imagem de perfil removida com sucesso!',
           });
 
+          authStore.fetchUser();
+
           user.value.image = null;
         })
         .onCancel(() => {
@@ -420,6 +424,8 @@ export default {
         errorMessage: 'Ocorreu um erro ao atualizar o perfil.',
         successMessage: 'Perfil atualizado com sucesso!',
       });
+
+      authStore.fetchUser();
     };
 
     const changePassword = async () => {

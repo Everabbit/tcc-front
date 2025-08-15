@@ -38,12 +38,19 @@
                 label="Senha"
                 label-color="white"
                 v-model="user.password"
-                type="password"
+                :type="isPasswordVisible ? 'text' : 'password'"
                 class="q-my-sm"
                 :rules="[required('Senha'), minLength('Senha', 8)]"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-lock" />
+                </template>
+                <template v-slot:append>
+                  <q-icon
+                    :name="isPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                    class="cursor-pointer"
+                    @click="togglePasswordVisibility"
+                  />
                 </template>
               </q-input>
               <div class="text-right">
@@ -145,6 +152,7 @@ import { useRouter } from 'vue-router';
 import { getUsernameInitials } from 'src/utils/utils';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
+import { AuthI } from 'src/models/auth.model';
 
 export default {
   setup() {
@@ -158,6 +166,12 @@ export default {
       password: '',
     });
 
+    const isPasswordVisible = ref(false);
+
+    function togglePasswordVisibility() {
+      isPasswordVisible.value = !isPasswordVisible.value;
+    }
+
     const logged = ref<boolean>(false);
     const userBasic = ref<UserBasicI>({
       id: 0,
@@ -167,13 +181,13 @@ export default {
       const isValid = await form.value.validate();
 
       if (isValid) {
-        const response = await handleApi<string>(() => UserService.login(clone(user.value)), {
+        const response = await handleApi<AuthI>(() => UserService.login(clone(user.value)), {
           successMessage: 'Login realizado com sucesso!',
           errorMessage: 'Email, nome de usuário ou senha incorretos.',
         });
 
         if (response) {
-          const token: string = response;
+          const token: string = response.accessToken;
           authStore.setToken(token);
 
           const userResponse = await handleApi<UserBasicI>(() => UserService.getBasicUser(), {
@@ -200,9 +214,11 @@ export default {
 
     async function getBasicInfo(): Promise<void> {
       if (authStore.token) {
-        authStore.fetchUser();
-        userBasic.value = authStore.getUser;
-        logged.value = true;
+        await authStore.fetchUser();
+        if (authStore.isAuthenticated) {
+          userBasic.value = authStore.getUser as UserBasicI;
+          logged.value = true;
+        }
       }
     }
 
@@ -223,6 +239,8 @@ export default {
       userBasic,
       logoutAccount,
       getUsernameInitials,
+      isPasswordVisible,
+      togglePasswordVisibility,
     };
   },
 };

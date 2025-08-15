@@ -64,12 +64,19 @@
                 label="Senha"
                 label-color="white"
                 v-model="user.password"
-                type="password"
+                :type="isPasswordVisible ? 'text' : 'password'"
                 class="q-my-sm"
                 :rules="[required('Senha'), minLength('Senha', 8)]"
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-lock" />
+                </template>
+                <template v-slot:append>
+                  <q-icon
+                    :name="isPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                    class="cursor-pointer"
+                    @click="togglePasswordVisibility"
+                  />
                 </template>
               </q-input>
               <q-input
@@ -77,7 +84,7 @@
                 label="Confirmar senha"
                 label-color="white"
                 v-model="confirmPassowrd"
-                type="password"
+                :type="isConfirmPasswordVisible ? 'text' : 'password'"
                 class="q-my-sm"
                 :rules="[
                   required('Confirmação de senha'),
@@ -87,6 +94,13 @@
               >
                 <template v-slot:prepend>
                   <q-icon name="mdi-lock" />
+                </template>
+                <template v-slot:append>
+                  <q-icon
+                    :name="isConfirmPasswordVisible ? 'mdi-eye-off' : 'mdi-eye'"
+                    class="cursor-pointer"
+                    @click="toggleConfirmPasswordVisibility"
+                  />
                 </template>
               </q-input>
               <q-checkbox
@@ -151,6 +165,7 @@ import { clone } from 'src/utils/transform';
 import { useRouter } from 'vue-router';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
+import { AuthI } from 'src/models/auth.model';
 
 export default {
   setup() {
@@ -168,17 +183,27 @@ export default {
     const check = ref<boolean>(false);
     const checkVerify = ref<boolean>(false);
     const confirmPassowrd = ref<string>('');
+    const isPasswordVisible = ref(false);
+    const isConfirmPasswordVisible = ref(false);
+
+    function togglePasswordVisibility() {
+      isPasswordVisible.value = !isPasswordVisible.value;
+    }
+
+    function toggleConfirmPasswordVisibility() {
+      isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+    }
 
     async function createAccount(): Promise<void> {
       const isValid: boolean = await form.value.validate();
 
       if (isValid && check.value) {
         checkVerify.value = false;
-        const data = await handleApi<string>(() => UserService.register(clone(user.value)), {
+        const data = await handleApi<AuthI>(() => UserService.register(clone(user.value)), {
           successMessage: 'Conta criada com sucesso!',
           errorMessage: 'Ocorreu um erro ao criar a conta.',
         });
-        const token: string = data;
+        const token: string = data.accessToken;
         authStore.setToken(token);
         router.push('/p/dashboard');
       } else {
@@ -203,6 +228,10 @@ export default {
       form,
       checkVerify,
       username,
+      isPasswordVisible,
+      togglePasswordVisibility,
+      isConfirmPasswordVisible,
+      toggleConfirmPasswordVisibility,
     };
   },
 };

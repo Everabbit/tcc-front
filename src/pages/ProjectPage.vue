@@ -151,7 +151,7 @@
                   </div>
 
                   <div class="q-ml-sm">
-                    <span>{{ project.progress * 100 }}%</span>
+                    <span>{{ getFixedProgress(project.progress) }}%</span>
                   </div>
                 </div>
               </div>
@@ -389,6 +389,14 @@ export default {
       return pastelColors[randomIndex];
     }
 
+    function getFixedProgress(progress): string {
+      const prog = progress * 100;
+      if (Number.isInteger(progress)) {
+        return prog.toFixed(0);
+      }
+      return prog.toFixed(2);
+    }
+
     const setupSocketListeners = () => {
       socket.on('projectUpdated', (updatedProject: ProjectI) => {
         project.value = updatedProject;
@@ -433,6 +441,7 @@ export default {
       getContrastColor,
       useRoles,
       RolesEnum,
+      getFixedProgress,
     };
   },
 };

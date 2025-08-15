@@ -64,7 +64,7 @@
             </td>
             <td>
               <div class="text-center">
-                <span> {{ getPercentVersionTasks(version.id) * 100 }}% </span>
+                <span> {{ getFixedProgress(getPercentVersionTasks(version.id)) }}% </span>
               </div>
               <q-linear-progress :value="getPercentVersionTasks(version.id)" color="primary" />
             </td>
@@ -191,6 +191,14 @@ export default {
       return total > 0 ? completed / total : 0;
     }
 
+    function getFixedProgress(progress): string {
+      const prog = progress * 100;
+      if (Number.isInteger(progress)) {
+        return prog.toFixed(0);
+      }
+      return prog.toFixed(2);
+    }
+
     const setupSocketListeners = () => {
       socket.on('versionCreated', (version: VersionI) => {
         versions.value.push(version);
@@ -245,6 +253,7 @@ export default {
       RolesEnum,
       versions,
       formatDate,
+      getFixedProgress,
     };
   },
 };

@@ -62,6 +62,19 @@ export default class UserService {
     }
   }
 
+  static async logout(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.post(`/users/logout`);
+      return response.data;
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || 'Logout realizado no cliente.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async update(user: UserI): Promise<ResponseI> {
     try {
       if (!user) {
@@ -165,24 +178,6 @@ export default class UserService {
   static async getPreferences(): Promise<ResponseI> {
     try {
       const response: AxiosResponse = await api.get(`/users/preferences`);
-
-      if (response.status === 200) {
-        return response.data;
-      } else {
-        throw Error(response.data.message);
-      }
-    } catch (err: any) {
-      const response: ResponseI = {
-        message: err,
-        success: false,
-      };
-      return response;
-    }
-  }
-
-  static async validateToken(): Promise<ResponseI> {
-    try {
-      const response: AxiosResponse = await api.get(`/users/validateToken`);
 
       if (response.status === 200) {
         return response.data;
