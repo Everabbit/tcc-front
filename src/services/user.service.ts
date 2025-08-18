@@ -16,7 +16,7 @@ export default class UserService {
       if (!email) {
         throw Error('Informe um email válido!');
       }
-
+      email = toBase64(email);
       const response: AxiosResponse = await api.post(`/users/emailrequest`, { email });
 
       if (response.status === 200) {
