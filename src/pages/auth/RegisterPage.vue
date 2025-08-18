@@ -104,13 +104,6 @@
                   />
                 </template>
               </q-input>
-              <q-checkbox
-                v-model="check"
-                label="Eu concordo com os Termos de Serviço e Política de Privacidade"
-              ></q-checkbox>
-              <div v-if="!check && checkVerify" class="text-negative q-ml-md">
-                É necessário aceitar os termos!
-              </div>
               <q-btn
                 class="full-width q-my-md"
                 icon="mdi-account-plus"
@@ -188,8 +181,6 @@ export default {
       username: '',
       password: '',
     });
-    const check = ref<boolean>(false);
-    const checkVerify = ref<boolean>(false);
     const confirmPassowrd = ref<string>('');
     const isPasswordVisible = ref(false);
     const isConfirmPasswordVisible = ref(false);
@@ -205,8 +196,7 @@ export default {
     async function createAccount(): Promise<void> {
       const isValid: boolean = await form.value.validate();
 
-      if (isValid && check.value) {
-        checkVerify.value = false;
+      if (isValid) {
         const data = await handleApi<AuthI>(() => UserService.register(clone(user.value)), {
           successMessage: 'Conta criada com sucesso!',
           errorMessage: 'Ocorreu um erro ao criar a conta.',
@@ -215,7 +205,6 @@ export default {
         authStore.setToken(token);
         router.push('/p/dashboard');
       } else {
-        checkVerify.value = true;
         $q.notify({
           type: 'negative',
           message: 'Corrija os erros no formulário',
@@ -247,7 +236,6 @@ export default {
 
     return {
       user,
-      check,
       required,
       email,
       minLength,
@@ -256,7 +244,6 @@ export default {
       confirmPassowrd,
       createAccount,
       form,
-      checkVerify,
       username,
       isPasswordVisible,
       togglePasswordVisibility,

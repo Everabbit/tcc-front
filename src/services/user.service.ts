@@ -16,7 +16,7 @@ export default class UserService {
       if (!email) {
         throw Error('Informe um email válido!');
       }
-      email = toBase64(email);
+
       const response: AxiosResponse = await api.post(`/users/emailrequest`, { email });
 
       if (response.status === 200) {
@@ -39,6 +39,56 @@ export default class UserService {
         throw Error('Informe um token válido!');
       }
       const response: AxiosResponse = await api.get(`/users/emailrequest/accept/${token}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async changePasswordRequest(email: string): Promise<ResponseI> {
+    try {
+      if (!email) {
+        throw Error('Informe um email válido!');
+      }
+      email = toBase64(email);
+      const response: AxiosResponse = await api.post(`/users/changepasswordrequest`, { email });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async resetPassword(password: string, token: string): Promise<ResponseI> {
+    try {
+      if (!password) {
+        throw Error('Informe uma senha válida!');
+      }
+      if (!token) {
+        throw Error('Informe um token válido!');
+      }
+      password = toBase64(password);
+
+      const response: AxiosResponse = await api.post(`/users/changepassword/${token}`, {
+        password,
+      });
 
       if (response.status === 200) {
         return response.data;

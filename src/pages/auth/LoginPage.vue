@@ -54,7 +54,11 @@
                 </template>
               </q-input>
               <div class="text-right">
-                <span>Esqueceu a senha?</span>
+                <span
+                  ><router-link to="/recuperarsenha" style="text-decoration: none"
+                    >Esqueceu a senha?</router-link
+                  ></span
+                >
               </div>
               <q-btn
                 class="full-width q-my-md"
