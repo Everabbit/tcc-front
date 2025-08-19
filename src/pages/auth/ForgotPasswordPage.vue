@@ -6,7 +6,7 @@
       style="min-width: 60vw"
     >
       <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
-        <q-card flat>
+        <q-card flat v-if="!emailSended">
           <q-card-section>
             <span class="text-primary flex justify-center items-center text-h5">
               <q-icon size="lg" name="mdi-fireplace" class="q-mr-md" /> <b>TaskForge</b>
@@ -51,6 +51,30 @@
             >
           </q-card-section>
         </q-card>
+        <q-card flat v-else>
+          <q-card-section>
+            <span class="text-primary flex justify-center items-center text-h5">
+              <q-icon size="lg" name="mdi-fireplace" class="q-mr-md" /> <b>TaskForge</b>
+            </span>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-none">
+            <span class="text-h4 text-center text-bold">Email enviado!</span>
+          </q-card-section>
+          <q-card-section class="flex justify-center q-py-none">
+            <span class="text-subtitle1 text-center"
+              >Verifique sua caixa de entrada e siga as instruções para alterar sua senha.</span
+            >
+          </q-card-section>
+          <q-card-section class="text-center">
+            <q-icon name="mdi-email-check-outline" size="100px" color="primary" />
+          </q-card-section>
+          <q-card-section class="text-center">
+            <span
+              >Lembrou a senha?
+              <router-link to="/" style="text-decoration: none">Faça login aqui</router-link></span
+            >
+          </q-card-section>
+        </q-card>
       </div>
       <div class="col-6" v-if="$q.screen.md || $q.screen.lg || $q.screen.xl">
         <q-img
@@ -85,6 +109,7 @@ export default {
     const $q = useQuasar();
     const { handleApi } = useApi();
     const form = ref<QForm>(null);
+    const emailSended = ref<boolean>(false);
 
     const handleForgotPassword = async (): Promise<void> => {
       const isValid: boolean = await form.value.validate();
@@ -93,6 +118,8 @@ export default {
           successMessage: 'Email de recuperação enviado com sucesso!',
           errorMessage: 'Ocorreu um erro ao enviar o email de recuperação.',
         });
+
+        emailSended.value = true;
       } else {
         $q.notify({
           type: 'negative',
@@ -109,6 +136,7 @@ export default {
       email,
       form,
       handleForgotPassword,
+      emailSended,
     };
   },
 };

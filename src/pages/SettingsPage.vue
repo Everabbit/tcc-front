@@ -169,27 +169,32 @@
                 <q-input dense outlined v-model="user.fullName" />
               </q-item-section>
             </q-item>
-
-            <q-item class="q-py-md">
-              <q-item-section>
-                <q-item-label>Email</q-item-label>
-              </q-item-section>
-              <q-item-section>
-                <q-input dense outlined v-model="user.email" type="email" />
-              </q-item-section>
-            </q-item>
           </q-list>
           <q-card-actions align="right" class="q-pa-md">
             <q-btn label="Salvar Alterações" color="primary" @click="saveProfile" />
           </q-card-actions>
         </q-card>
 
-        <!-- abrir dialog de troca de senha -->
         <q-card class="q-mb-lg">
           <q-card-section>
             <div class="text-h6">Segurança</div>
           </q-card-section>
           <q-list bordered separator>
+            <q-item class="q-py-md">
+              <q-item-section>
+                <q-item-label>E-mail</q-item-label>
+                <q-item-label caption> Altere seu e-mail. </q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn
+                  label="Alterar E-mail"
+                  color="primary"
+                  outline
+                  @click="showChangePasswordDialog = true"
+                />
+              </q-item-section>
+            </q-item>
+
             <q-item class="q-py-md">
               <q-item-section>
                 <q-item-label>Senha</q-item-label>

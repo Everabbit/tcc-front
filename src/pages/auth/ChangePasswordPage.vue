@@ -5,7 +5,7 @@
       class="row flex items-stretch justify-center q-ma-md"
       style="min-width: 60vw"
     >
-      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg">
+      <div class="col-md-6 col-lg-6 col-xl-6 q-pa-lg flex flex-center">
         <q-card flat>
           <q-card-section>
             <span class="text-primary flex justify-center items-center text-h5">
@@ -13,58 +13,20 @@
             </span>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
-            <span class="text-h4 text-center text-bold">Criar nova conta</span>
+            <span class="text-h4 text-center text-bold">Alterar Senha</span>
           </q-card-section>
           <q-card-section class="flex justify-center q-py-none">
-            <span class="text-subtitle1 text-center">Preencha os campos abaixo para começar</span>
+            <span class="text-subtitle1 text-center"
+              >Preencha os campos abaixo para alterar sua senha</span
+            >
           </q-card-section>
           <q-card-section>
-            <q-form @submit="createAccount" ref="form">
-              <q-input
-                filled
-                label="Digite seu nome completo"
-                label-color="white"
-                type="text"
-                v-model="user.fullName"
-                class="q-my-sm"
-                :rules="[required('Nome completo')]"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="mdi-account" />
-                </template>
-              </q-input>
-              <q-input
-                readonly
-                filled
-                label="Email"
-                label-color="white"
-                v-model="user.email"
-                type="email"
-                class="q-my-sm"
-                :rules="[required('Email'), email]"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="mdi-email" />
-                </template>
-              </q-input>
-              <q-input
-                filled
-                label="Nome de usuário"
-                label-color="white"
-                v-model="user.username"
-                type="text"
-                class="q-my-sm"
-                :rules="[required('Nome de usuário'), username]"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="mdi-account-circle" />
-                </template>
-              </q-input>
+            <q-form @submit="changePassword" ref="form">
               <q-input
                 filled
                 label="Senha"
                 label-color="white"
-                v-model="user.password"
+                v-model="password"
                 :type="isPasswordVisible ? 'text' : 'password'"
                 class="q-my-sm"
                 :rules="[required('Senha'), minLength('Senha', 8)]"
@@ -84,12 +46,12 @@
                 filled
                 label="Confirmar senha"
                 label-color="white"
-                v-model="confirmPassowrd"
+                v-model="confirmPassword"
                 :type="isConfirmPasswordVisible ? 'text' : 'password'"
                 class="q-my-sm"
                 :rules="[
                   required('Confirmação de senha'),
-                  passwordMatch(user.password, confirmPassowrd),
+                  passwordMatch(password, confirmPassword),
                   minLength('Senha', 8),
                 ]"
               >
@@ -107,7 +69,7 @@
               <q-btn
                 class="full-width q-my-md"
                 icon="mdi-account-plus"
-                label="Criar Conta"
+                label="Alterar Senha"
                 color="primary"
                 type="submit"
               />
@@ -115,7 +77,7 @@
           </q-card-section>
           <q-card-section class="text-center">
             <span
-              >Já tem um conta?
+              >Lembrou sua Senha?
               <router-link to="/" style="text-decoration: none">Faça login aqui</router-link></span
             >
           </q-card-section>
@@ -152,7 +114,7 @@ import {
   checkboxRequired,
   username,
 } from '../../utils/validation';
-import type { UserRegisterI } from 'src/models/user.model';
+import type { PasswordChangeI, UserRegisterI } from 'src/models/user.model';
 import { onMounted, ref } from 'vue';
 import UserService from 'src/services/user.service';
 import { clone } from 'src/utils/transform';
@@ -172,16 +134,10 @@ export default {
   setup(props) {
     const $q = useQuasar();
     const router = useRouter();
-    const authStore = useAuthStore();
     const { handleApi } = useApi();
     const form = ref<QForm>(null);
-    const user = ref<UserRegisterI>({
-      fullName: '',
-      email: '',
-      username: '',
-      password: '',
-    });
-    const confirmPassowrd = ref<string>('');
+    const password = ref<string>('');
+    const confirmPassword = ref<string>('');
     const isPasswordVisible = ref(false);
     const isConfirmPasswordVisible = ref(false);
 
@@ -193,17 +149,16 @@ export default {
       isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
     }
 
-    async function createAccount(): Promise<void> {
+    async function changePassword(): Promise<void> {
       const isValid: boolean = await form.value.validate();
 
       if (isValid) {
-        const data = await handleApi<AuthI>(() => UserService.register(clone(user.value)), {
-          successMessage: 'Conta criada com sucesso!',
-          errorMessage: 'Ocorreu um erro ao criar a conta.',
+        await handleApi(() => UserService.changePassword(password.value, props.token), {
+          successMessage: 'Senha alterada com sucesso!',
+          errorMessage: 'Ocorreu um erro ao alterar a senha.',
         });
-        const token: string = data.accessToken;
-        authStore.setToken(token);
-        router.push('/p/dashboard');
+
+        router.push('/');
       } else {
         $q.notify({
           type: 'negative',
@@ -212,42 +167,18 @@ export default {
       }
     }
 
-    async function verifyToken(): Promise<void> {
-      if (props.token) {
-        const data = await handleApi<EmailRequestI>(
-          () => UserService.emailRequestAccept(props.token),
-          {
-            errorMessage: 'Token inválido ou expirado.',
-          },
-        );
-
-        if (data) {
-          user.value.email = data.email;
-        } else {
-          router.push('/registro');
-        }
-      }
-    }
-
-    onMounted(async () => {
-      await verifyToken();
-    });
-
     return {
-      user,
       required,
-      email,
       minLength,
       passwordMatch,
-      checkboxRequired,
-      confirmPassowrd,
-      createAccount,
+      confirmPassword,
       form,
-      username,
       isPasswordVisible,
       togglePasswordVisibility,
       isConfirmPasswordVisible,
       toggleConfirmPasswordVisibility,
+      changePassword,
+      password,
     };
   },
 };

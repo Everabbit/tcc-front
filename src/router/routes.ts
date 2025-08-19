@@ -28,12 +28,12 @@ const routes: RouteRecordRaw[] = [
         name: 'recoverPassword',
         component: () => import('pages/auth/ForgotPasswordPage.vue'),
       },
-      // {
-      //   path: 'resetarsenha/:token',
-      //   name: 'resetPassword',
-      //   props: true,
-      //   component: () => import('pages/auth/ResetPasswordPage.vue'),
-      // },
+      {
+        path: 'redefinirsenha/:token',
+        name: 'resetPassword',
+        props: true,
+        component: () => import('pages/auth/ChangePasswordPage.vue'),
+      },
     ],
   },
   {

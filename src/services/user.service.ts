@@ -76,7 +76,7 @@ export default class UserService {
     }
   }
 
-  static async resetPassword(password: string, token: string): Promise<ResponseI> {
+  static async changePassword(password: string, token: string): Promise<ResponseI> {
     try {
       if (!password) {
         throw Error('Informe uma senha válida!');
