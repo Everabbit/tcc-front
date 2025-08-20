@@ -39,18 +39,11 @@
               readonly
               outlined
               mask="##/##/####"
-              :rules="[(val) => typeof val === 'string' || '']"
             >
               <template v-slot:append>
                 <q-icon name="mdi-calendar" class="cursor-pointer">
                   <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                    <q-date
-                      v-model="projectCreateData.deadline"
-                      minimal
-                      color="primary"
-                      text-color="white"
-                      today-btn
-                    >
+                    <q-date v-model="deadline" minimal color="primary" text-color="white" today-btn>
                       <div class="row items-center justify-end q-gutter-sm">
                         <q-btn label="OK" color="primary" flat v-close-popup />
                       </div>
@@ -134,11 +127,20 @@
           <!-- Lista de Membros -->
           <q-list bordered class="q-mt-md">
             <q-item
-              v-for="(member, index) in projectCreateData.members"
+              v-for="(member, index) in projectCreateData.participation"
               :key="index"
               class="q-pa-sm"
             >
-              <q-item-section>{{ member.username }}</q-item-section>
+              <q-item-section avatar>
+                <q-avatar size="md" v-if="member.user.image">
+                  <img :src="member.user.image" />
+                </q-avatar>
+                <q-avatar size="md" color="primary" text-color="white" v-else>
+                  {{ getUsernameInitials(member.user.username) }}
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>{{ member.user.username }}</q-item-section>
 
               <q-item-section side>
                 <q-badge color="primary">
@@ -165,16 +167,17 @@
 
 <script lang="ts">
 import { RolesValues } from 'src/enums/roles.enum';
-import { ProjectCreateI, ProjectMemberI } from 'src/models/project.model';
+import { ProjectI, ProjectParticipationI } from 'src/models/project.model';
 import { clone } from 'src/utils/transform';
 import { computed, ref } from 'vue';
 import { required, validateSelect } from '../../utils/validation';
 import { QForm, useQuasar } from 'quasar';
 import ProjectService from 'src/services/project.service';
 import UserService from 'src/services/user.service';
-import { UserBasicI } from 'src/models/user.model';
+import { UserBasicI, UserI } from 'src/models/user.model';
 import { useApi } from 'src/services/useApi';
 import { ProjectStatus, ProjectStatusValues } from 'src/enums/project_status.enum';
+import { getUsernameInitials } from 'src/utils/utils';
 
 export default {
   emits: ['close'],
@@ -183,24 +186,26 @@ export default {
     const form = ref<QForm>(null);
     const { handleApi } = useApi();
 
-    const projectCreateData = ref<ProjectCreateI>({
+    const projectCreateData = ref<ProjectI>({
+      creatorId: 0,
       name: '',
-      deadline: '',
-      description: '',
       status: ProjectStatus.PLAN,
-      members: [],
+      description: '',
+      deadline: null,
+      participation: [],
     });
+    const deadline = ref<string>(null);
     const statusValues = clone(ProjectStatusValues);
     const bannerFile = ref<File>(null);
     const roles = clone(RolesValues);
     const usersList = ref<UserBasicI[]>([]);
 
-    const projectCreateMemberData = ref<ProjectMemberI>({
+    const projectCreateMemberData = ref<ProjectParticipationI>({
       role: 2,
     });
 
     const formattedData = computed<string>(() => {
-      let formatted: string = projectCreateData.value.deadline;
+      let formatted: string = deadline.value;
 
       if (formatted) {
         const parts: string[] = formatted.split('/');
@@ -230,7 +235,9 @@ export default {
         return;
       }
 
-      const user = usersList.value.find((u) => u.id === projectCreateMemberData.value.id);
+      const user: UserBasicI = usersList.value.find(
+        (u) => u.id === projectCreateMemberData.value.id,
+      );
 
       if (!user) {
         $q.notify({
@@ -241,24 +248,28 @@ export default {
         return;
       }
 
-      const isAlreadyMember = projectCreateData.value.members.some(
-        (member) => member.id === user.id,
-      );
+      if (
+        projectCreateData.value.participation &&
+        projectCreateData.value.participation.length > 0
+      ) {
+        const isAlreadyMember = projectCreateData.value.participation.some(
+          (member) => member.user.id === user.id,
+        );
 
-      if (isAlreadyMember) {
-        $q.notify({
-          color: 'info',
-          message: `${user.username} já é um membro do projeto.`,
-          icon: 'mdi-information',
-        });
-        return;
+        if (isAlreadyMember) {
+          $q.notify({
+            color: 'info',
+            message: `${user.username} já é um membro do projeto.`,
+            icon: 'mdi-information',
+          });
+          return;
+        }
       }
 
-      projectCreateData.value.members.push({
-        id: user.id,
-        username: user.username,
-        image: user.image,
+      projectCreateData.value.participation.push({
+        userId: user.id,
         role: projectCreateMemberData.value.role,
+        user: user,
       });
 
       projectCreateMemberData.value.id = null;
@@ -267,7 +278,7 @@ export default {
     }
 
     function removeMember(index: number) {
-      projectCreateData.value.members.splice(index, 1);
+      projectCreateData.value.participation.splice(index, 1);
     }
 
     async function addProject(): Promise<void> {
@@ -275,6 +286,11 @@ export default {
 
       if (isValid) {
         const formData: FormData = new FormData();
+
+        if (deadline.value) {
+          projectCreateData.value.deadline = new Date(deadline.value);
+        }
+
         formData.append('project', JSON.stringify(projectCreateData.value));
         if (bannerFile.value) {
           formData.append('banner', bannerFile.value);
@@ -287,11 +303,12 @@ export default {
 
         //limpar formulário
         projectCreateData.value = {
+          creatorId: 0,
           name: '',
-          deadline: '',
-          description: '',
           status: ProjectStatus.PLAN,
-          members: [],
+          description: '',
+          deadline: null,
+          participation: [],
         };
         bannerFile.value = null;
         projectCreateMemberData.value = {
@@ -342,6 +359,8 @@ export default {
       bannerFile,
       usersList,
       statusValues,
+      deadline,
+      getUsernameInitials,
     };
   },
 };

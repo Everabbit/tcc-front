@@ -8,6 +8,7 @@
         v-if="showDialogMembers"
       ></AddMemberDialogCompoent>
     </q-dialog>
+
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
         <div class="text-h6">Membros do Projeto</div>
@@ -23,55 +24,107 @@
       <q-separator />
 
       <div class="q-mt-md">
-        <q-item
-          v-for="member in orderedMembers"
-          :key="member.userId"
-          class="q-mb-sm"
-          :clickable="member.userId !== creatorId && useRoles.hasPermission(RolesEnum.MANAGER)"
-          @click="addmembersDialog(member)"
-        >
-          <q-item-section avatar>
-            <q-avatar color="primary" text-color="white"
-              ><img v-if="member.user.image" :src="member.user.image" />
-              <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
-            </q-avatar>
-          </q-item-section>
-          <q-item-section>
-            <q-item-label>{{ member.user.fullName }}</q-item-label>
-            <q-item-label caption>{{ member.user.username }}</q-item-label>
-          </q-item-section>
-          <q-item-section side class="row">
-            <q-badge v-if="member.userId === creatorId" label="Criador" color="primary" />
-          </q-item-section>
-          <q-item-section side class="row">
-            <q-badge
-              :label="roles.find((role) => role.id === member.role).name"
-              color="secondary"
-            />
-          </q-item-section>
-          <q-item-section side class="row">
-            <q-btn
-              v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
-              :disable="member.userId === creatorId"
-              flat
-              dense
-              icon="close"
-              class="q-ml-sm"
-              @click.stop="removeMember(member.userId)"
+        <div v-if="acceptedMembers.length > 0">
+          <div class="text-subtitle1 q-mb-sm">Membros</div>
+          <q-list separator>
+            <q-item
+              v-for="member in acceptedMembers"
+              :key="member.userId"
+              class="q-mb-sm"
+              :clickable="member.userId !== creatorId && useRoles.hasPermission(RolesEnum.MANAGER)"
+              @click="addmembersDialog(member)"
             >
-              <q-tooltip
-                v-if="member.userId === creatorId"
-                class="bg-red text-body2"
-                position="top"
-                anchor="bottom middle"
-                self="top middle"
-                :offset="[10, 10]"
-              >
-                O criador do projeto não pode ser removido.
-              </q-tooltip>
-            </q-btn>
-          </q-item-section>
-        </q-item>
+              <q-item-section avatar>
+                <q-avatar color="primary" text-color="white">
+                  <img v-if="member.user.image" :src="member.user.image" />
+                  <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label>{{ member.user.fullName }}</q-item-label>
+                <q-item-label caption>{{ member.user.username }}</q-item-label>
+              </q-item-section>
+
+              <q-item-section side>
+                <q-badge v-if="member.userId === creatorId" label="Criador" color="accent" />
+                <q-badge
+                  v-else
+                  :label="roles.find((role) => role.id === member.role).name"
+                  color="secondary"
+                />
+              </q-item-section>
+
+              <q-item-section side>
+                <q-btn
+                  v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+                  :disable="member.userId === creatorId"
+                  flat
+                  dense
+                  round
+                  icon="close"
+                  @click.stop="removeMember(member.userId)"
+                >
+                  <q-tooltip
+                    v-if="member.userId === creatorId"
+                    class="bg-red text-body2"
+                    :offset="[10, 10]"
+                  >
+                    O criador do projeto não pode ser removido.
+                  </q-tooltip>
+                </q-btn>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
+
+        <div v-if="pendingMembers.length > 0" class="q-mt-lg">
+          <div class="text-subtitle1 q-mb-sm">Convites Pendentes</div>
+          <q-list separator>
+            <q-item
+              v-for="member in pendingMembers"
+              :key="member.userId"
+              class="q-mb-sm"
+              :clickable="useRoles.hasPermission(RolesEnum.MANAGER)"
+              @click="addmembersDialog(member)"
+            >
+              <q-item-section avatar>
+                <q-avatar color="grey" text-color="white">
+                  <img v-if="member.user.image" :src="member.user.image" />
+                  <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
+                </q-avatar>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-label>{{ member.user.fullName }}</q-item-label>
+                <q-item-label caption>{{ member.user.username }}</q-item-label>
+              </q-item-section>
+
+              <q-item-section side>
+                <q-item-label caption class="row items-center">
+                  <q-icon name="schedule" class="q-mr-xs" />
+                  Aguardando aceitação
+                </q-item-label>
+              </q-item-section>
+
+              <q-item-section side>
+                <q-btn
+                  v-if="useRoles.hasPermission(RolesEnum.MANAGER)"
+                  flat
+                  dense
+                  round
+                  icon="close"
+                  @click.stop="removeMember(member.userId)"
+                  aria-label="Cancelar Convite"
+                >
+                  <q-tooltip class="bg-primary text-body2" :offset="[10, 10]">
+                    Cancelar convite
+                  </q-tooltip>
+                </q-btn>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </div>
       </div>
     </q-card-section>
   </q-card>
@@ -122,6 +175,14 @@ export default {
       );
       members.value.splice(0, members.value.length, ...membersResponse);
     }
+
+    const acceptedMembers = computed(() => {
+      return orderedMembers.value.filter((member) => member.accepted);
+    });
+
+    const pendingMembers = computed(() => {
+      return orderedMembers.value.filter((member) => !member.accepted);
+    });
 
     const orderedMembers = computed(() => {
       return [...members.value].sort((a, b) => {
@@ -228,6 +289,8 @@ export default {
       RolesEnum,
       roles,
       removeMember,
+      acceptedMembers,
+      pendingMembers,
     };
   },
 };

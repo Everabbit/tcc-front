@@ -93,9 +93,10 @@ export default {
     const statusFilter = ref<number>(1);
     const statusOptions = ref<{ id: number; value: string }[]>([
       { id: filterEnum.ALL, value: 'Todos' },
-      { id: filterEnum.ACTIVED, value: 'Ativos' },
-      { id: filterEnum.UNACTIVE, value: 'Inativos' },
-      { id: filterEnum.ARCHIVED, value: 'Arquivados' },
+      { id: ProjectStatus.PLAN, value: 'Em planejamento' },
+      { id: ProjectStatus.ACTIVE, value: 'Ativo' },
+      { id: ProjectStatus.ARCHIVED, value: 'Arquivado' },
+      { id: ProjectStatus.ENDED, value: 'Finalizado' },
     ]);
 
     const sortFilter = ref<number>(1);
@@ -131,14 +132,17 @@ export default {
       switch (statusFilter.value) {
         case filterEnum.ALL:
           break;
-        case filterEnum.ACTIVED:
+        case ProjectStatus.PLAN:
+          filtered = filtered.filter((project) => project.status === ProjectStatus.PLAN);
+          break;
+        case ProjectStatus.ACTIVE:
           filtered = filtered.filter((project) => project.status === ProjectStatus.ACTIVE);
           break;
-        case filterEnum.UNACTIVE:
-          filtered = filtered.filter((project) => project.status === ProjectStatus.UNACTIVE);
-          break;
-        case filterEnum.ARCHIVED:
+        case ProjectStatus.ARCHIVED:
           filtered = filtered.filter((project) => project.status === ProjectStatus.ARCHIVED);
+          break;
+        case ProjectStatus.ENDED:
+          filtered = filtered.filter((project) => project.status === ProjectStatus.ENDED);
           break;
       }
 

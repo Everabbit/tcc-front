@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { ProjectCreateI, ProjectMemberI, ProjectParticipationI } from 'src/models/project.model';
+import { ProjectParticipationI } from 'src/models/project.model';
 import { ResponseI } from 'src/models/response.model';
 import api from './api';
 import { TagI } from 'src/models/tag.model';

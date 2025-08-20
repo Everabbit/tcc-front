@@ -34,6 +34,12 @@ const routes: RouteRecordRaw[] = [
         props: true,
         component: () => import('pages/auth/ChangePasswordPage.vue'),
       },
+      {
+        path: 'confirmaremail/:token',
+        name: 'confirmEmail',
+        props: true,
+        component: () => import('pages/auth/ConfirmEmailPage.vue'),
+      },
     ],
   },
   {

@@ -104,6 +104,40 @@
       </q-card>
     </q-dialog>
 
+    <q-dialog v-model="showChangeEmailDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
+      <q-card style="width: 400px">
+        <q-card-section>
+          <div class="text-h6">Alterar E-mail</div>
+        </q-card-section>
+        <q-card-section class="q-pt-none">
+          <q-item class="q-pa-none">
+            <q-item-section>
+              <q-item-label>E-mail Atual:</q-item-label>
+              <q-item-label caption>{{ user.email }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-form @submit="changeEmail" ref="emailForm">
+            <q-input
+              label="Novo E-mail"
+              v-model="emailData"
+              type="email"
+              outlined
+              dense
+              class="q-mb-md"
+              :rules="[required('Novo E-mail'), email]"
+            />
+            <q-card-actions align="right">
+              <q-btn flat label="Cancelar" color="primary" v-close-popup />
+              <q-btn label="Alterar E-mail" color="primary" type="submit" />
+            </q-card-actions>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
     <div class="row justify-center">
       <div class="col-12 col-md-10 col-lg-8" style="max-width: 1000px">
         <q-card class="q-mb-lg">
@@ -190,7 +224,7 @@
                   label="Alterar E-mail"
                   color="primary"
                   outline
-                  @click="showChangePasswordDialog = true"
+                  @click="showChangeEmailDialog = true"
                 />
               </q-item-section>
             </q-item>
@@ -307,7 +341,7 @@ import { useAuthStore } from 'src/stores/authStore';
 import { useSettingsStore } from 'src/stores/settingsStore';
 import { clone } from 'src/utils/transform';
 import { getUsernameInitials } from 'src/utils/utils';
-import { minLength, passwordMatch, required } from 'src/utils/validation';
+import { email, minLength, passwordMatch, required } from 'src/utils/validation';
 import { computed, onMounted, ref, watch } from 'vue';
 
 export default {
@@ -333,6 +367,34 @@ export default {
       newPassword: '',
       newPasswordConfirm: '',
     });
+
+    const emailForm = ref<QForm>(null);
+    const showChangeEmailDialog = ref<boolean>(false);
+    const emailData = ref<string>('');
+
+    const changeEmail = async () => {
+      const isValid = await emailForm.value.validate();
+      if (!isValid) {
+        $q.notify({
+          type: 'negative',
+          message: 'Por favor, corrija os erros no formulário.',
+        });
+        return;
+      }
+
+      const data: boolean = await handleApi(
+        () => UserService.changeEmailRequest(clone(emailData.value)),
+        {
+          errorMessage: 'Ocorreu um erro ao alterar o e-mail.',
+          successMessage: 'E-mail alterado com sucesso!',
+        },
+      );
+
+      if (data) {
+        showChangeEmailDialog.value = false;
+        emailData.value = '';
+      }
+    };
 
     const isDarkMode = computed({
       get: () => settingsStore.settings?.darkMode ?? false,
@@ -526,6 +588,11 @@ export default {
       passwordMatch,
       changePassword,
       logout,
+      showChangeEmailDialog,
+      emailData,
+      emailForm,
+      email,
+      changeEmail,
     };
   },
 };

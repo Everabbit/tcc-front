@@ -1,6 +1,6 @@
 import { ProjectStatus } from 'src/enums/project_status.enum';
 import { RolesEnum } from 'src/enums/roles.enum';
-import { UserI } from './user.model';
+import { UserBasicI, UserI } from './user.model';
 import { VersionI } from './version.model';
 import { TagI } from './tag.model';
 
@@ -23,26 +23,11 @@ export interface ProjectI {
 export interface ProjectParticipationI {
   id?: number;
   userId?: number;
-  user?: UserI;
+  user?: UserBasicI;
   projectId?: number;
   project?: ProjectI;
   role: RolesEnum;
   invitedAt?: Date;
+  accepted?: boolean;
   acceptedAt?: Date | null;
-}
-
-export interface ProjectCreateI {
-  name: string;
-  description?: string;
-  deadline?: string;
-  status: ProjectStatus;
-  members?: ProjectMemberI[];
-}
-
-export interface ProjectMemberI {
-  id?: number;
-  username?: string;
-  image?: string;
-  initials?: string;
-  role?: RolesEnum;
 }

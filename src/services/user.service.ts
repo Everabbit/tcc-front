@@ -104,6 +104,49 @@ export default class UserService {
     }
   }
 
+  static async changeEmailRequest(email: string): Promise<ResponseI> {
+    try {
+      if (!email) {
+        throw Error('Informe um email válido!');
+      }
+      email = toBase64(email);
+      const response: AxiosResponse = await api.post(`/users/changeemailrequest`, { email });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
+  static async verifyEmailChange(hash: string): Promise<ResponseI> {
+    try {
+      if (!hash) {
+        throw Error('Informe um hash válido!');
+      }
+      const response: AxiosResponse = await api.get(`/users/verifyemailchange/${hash}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response?.data?.message || err.message || 'Ocorreu um erro desconhecido.',
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async register(user: UserRegisterI): Promise<ResponseI> {
     try {
       if (!user || !user.email || !user.password || !user.fullName) {
