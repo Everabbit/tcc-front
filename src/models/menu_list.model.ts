@@ -24,4 +24,10 @@ export const menuBasicList: MenuBasicListI[] = [
     link: '/p/minhas_tarefas',
     icon: 'mdi-format-list-checks',
   },
+  {
+    id: 4,
+    title: 'Notificações',
+    link: '/p/notificacoes',
+    icon: 'mdi-bell-badge',
+  },
 ];

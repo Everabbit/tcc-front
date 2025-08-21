@@ -123,6 +123,14 @@ const routes: RouteRecordRaw[] = [
           checkPermission: false,
         },
       },
+      {
+        path: 'notificacoes',
+        component: () => import('pages/NotificationsPage.vue'),
+        name: 'Notificações',
+        meta: {
+          checkPermission: false,
+        },
+      },
     ],
   },
 
