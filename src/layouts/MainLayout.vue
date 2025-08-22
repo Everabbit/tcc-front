@@ -103,20 +103,24 @@
 </template>
 
 <script lang="ts">
+import { useQuasar } from 'quasar';
 import { RolesEnum } from 'src/enums/roles.enum';
 import { HeaderButtonI } from 'src/models/extra.model';
 import { menuBasicList, MenuBasicListI } from 'src/models/menu_list.model';
+import { NotificationI } from 'src/models/notification.model';
+import socket from 'src/services/socket.service';
 import { useApi } from 'src/services/useApi';
 import { useAuthStore } from 'src/stores/authStore';
 import { useRolesStore } from 'src/stores/rolesStore';
 import emitter from 'src/utils/event_bus';
-import { clone } from 'src/utils/transform';
+import { clone, toBase64 } from 'src/utils/transform';
 import { getUsernameInitials } from 'src/utils/utils';
-import { computed, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 export default {
   setup() {
+    const $q = useQuasar();
     const authStore = useAuthStore();
     const rolesStore = useRolesStore();
     const router = useRouter();
@@ -135,6 +139,46 @@ export default {
     function goToRoute(route: string): void {
       router.push(route);
     }
+
+    const setupSocketListeners = () => {
+      socket.on('newNotification', (notification: NotificationI) => {
+        $q.notify({
+          message: notification.title,
+          caption: notification.message,
+          icon: 'mdi-bell',
+          color: 'primary',
+          position: 'top-right',
+          timeout: 5000,
+          actions: [
+            {
+              label: 'Ver',
+              color: 'white',
+              handler: () => {
+                router.push(`/p/notificacoes/${toBase64(notification.id.toString())}`);
+              },
+            },
+          ],
+        });
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('newNotification');
+    };
+
+    onMounted(async () => {
+      socket.connect();
+
+      socket.emit('joinUserRoom', authStore.user.id.toString());
+
+      setupSocketListeners();
+    });
+
+    onUnmounted(() => {
+      removeSocketListeners();
+
+      socket.disconnect();
+    });
 
     return {
       leftDrawerOpen,

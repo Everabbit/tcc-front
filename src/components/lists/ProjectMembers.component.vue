@@ -36,14 +36,14 @@
             >
               <q-item-section avatar>
                 <q-avatar color="primary" text-color="white">
-                  <img v-if="member.user.image" :src="member.user.image" />
-                  <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
+                  <img v-if="member.user?.image" :src="member.user.image" />
+                  <span v-else>{{ getUsernameInitials(member.user?.username) }}</span>
                 </q-avatar>
               </q-item-section>
 
               <q-item-section>
-                <q-item-label>{{ member.user.fullName }}</q-item-label>
-                <q-item-label caption>{{ member.user.username }}</q-item-label>
+                <q-item-label>{{ member.user?.fullName }}</q-item-label>
+                <q-item-label caption>{{ member.user?.username }}</q-item-label>
               </q-item-section>
 
               <q-item-section side>
@@ -90,14 +90,14 @@
             >
               <q-item-section avatar>
                 <q-avatar color="grey" text-color="white">
-                  <img v-if="member.user.image" :src="member.user.image" />
-                  <span v-else>{{ getUsernameInitials(member.user.username) }}</span>
+                  <img v-if="member.user?.image" :src="member.user.image" />
+                  <span v-else>{{ getUsernameInitials(member.user?.username) }}</span>
                 </q-avatar>
               </q-item-section>
 
               <q-item-section>
-                <q-item-label>{{ member.user.fullName }}</q-item-label>
-                <q-item-label caption>{{ member.user.username }}</q-item-label>
+                <q-item-label>{{ member.user?.fullName }}</q-item-label>
+                <q-item-label caption>{{ member.user?.username }}</q-item-label>
               </q-item-section>
 
               <q-item-section side>
@@ -131,6 +131,7 @@
 </template>
 
 <script lang="ts">
+import { mdiConsoleNetworkOutline } from '@quasar/extras/mdi-v4';
 import { useQuasar } from 'quasar';
 import AddMemberDialogCompoent from 'src/components/dialogs/AddMemberDialog.component.vue';
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';
@@ -213,11 +214,12 @@ export default {
       }
     }
 
-    function removeMember(index: number): void {
-      let member: string = members.value.find((member) => member.userId === index).user.username;
+    function removeMember(userId: number): void {
+      const memberToRemove = members.value.find((m) => m.userId === userId);
+      const memberName = memberToRemove?.user?.username || 'este membro';
       $q.dialog({
         title: 'Confirmar Remoção',
-        message: `Tem certeza de que deseja remover ${member} do projeto?`,
+        message: `Tem certeza de que deseja remover ${memberName} do projeto?`,
         cancel: {
           label: 'Não',
           color: 'grey',
@@ -229,7 +231,7 @@ export default {
         },
         persistent: false,
       }).onOk(async () => {
-        await handleApi(() => ProjectService.removeMember(props.projectId, index), {
+        await handleApi(() => ProjectService.removeMember(props.projectId, userId), {
           errorMessage: 'Ocorreu um erro ao remover o membro.',
           successMessage: 'Membro removido com sucesso!',
         });
@@ -244,7 +246,6 @@ export default {
       });
 
       socket.on('memberUpdated', (updatedMember: ProjectParticipationI) => {
-        console.log(updatedMember);
         const index = members.value.findIndex((m) => m.userId === updatedMember.userId);
         if (index !== -1) {
           members.value[index] = updatedMember;

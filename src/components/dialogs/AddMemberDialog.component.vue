@@ -155,7 +155,7 @@ export default {
         });
       } else {
         await handleApi(() => ProjectService.addMember(props.projectId, memberUser), {
-          successMessage: 'Membro adicionado com sucesso!',
+          successMessage: 'Solicitação de participação enviada com sucesso!',
           errorMessage: 'Ocorreu um erro ao adicionar membro.',
         });
       }

@@ -10,6 +10,7 @@ import { useAuthStore } from 'src/stores/authStore';
 import { useSettingsStore } from 'src/stores/settingsStore';
 import { fromBase64 } from 'src/utils/transform';
 import { useRolesStore } from 'src/stores/rolesStore';
+import { RolesEnum } from 'src/enums/roles.enum';
 
 /*
  * If not building with SSR mode, you can
@@ -55,6 +56,9 @@ export default defineRouter(function (/* { store, ssrContext } */) {
       const projectId = fromBase64(to.params.projectId as string);
       if (projectId) {
         await rolesStore.fetchAndSetRole(Number(projectId));
+        if (!rolesStore.hasPermission(RolesEnum.VIEWER)) {
+          next({ name: 'Dashboard' });
+        }
       }
     } else {
       rolesStore.resetRole();

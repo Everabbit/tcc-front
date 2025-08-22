@@ -57,7 +57,7 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted, computed, onBeforeMount } from 'vue';
+import { ref, onMounted, computed, onBeforeMount, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { filterTaskPriorityEnum } from 'src/enums/filter.enum';
 import { ColumnI } from 'src/models/extra.model';
@@ -237,7 +237,7 @@ export default {
       setupSocketListeners();
     });
 
-    onBeforeMount(() => {
+    onUnmounted(() => {
       emitter.off('open-task-dialog', openTaskDialog);
 
       removeSocketListeners();

@@ -148,6 +148,30 @@ export default class ProjectService {
     }
   }
 
+  static async acceptInvite(token: string): Promise<ResponseI> {
+    try {
+      if (!token) {
+        throw Error('Informe um token válido!');
+      }
+
+      const response: AxiosResponse = await api.post(`/projects/acceptinvite`, {
+        invitationToken: token,
+      });
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
+
   static async updateMember(id: number, member: ProjectParticipationI): Promise<ResponseI> {
     try {
       if (!id) {
@@ -183,7 +207,7 @@ export default class ProjectService {
       if (!memberId) {
         throw Error('Informe membros válidos!');
       }
-      console.log(`/projects/removeuser/${id}/${memberId}`);
+
       const response: AxiosResponse = await api.delete(`/projects/removeuser/${id}/${memberId}`);
 
       if (response.status === 200) {

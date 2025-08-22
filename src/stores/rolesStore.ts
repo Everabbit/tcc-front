@@ -10,7 +10,7 @@ export const useRolesStore = defineStore('roles', {
   getters: {
     hasPermission: (state) => (requiredRole: RolesEnum) => {
       if (!state.role) {
-        return true;
+        return false;
       }
 
       return state.role <= requiredRole;
@@ -21,7 +21,10 @@ export const useRolesStore = defineStore('roles', {
     async fetchAndSetRole(projectId: number) {
       try {
         const response = await UserService.getUserRole(projectId);
-        if (!response.success) throw new Error(response.message);
+        if (!response.success) {
+          this.role = null as RolesEnum;
+          throw new Error(response.message);
+        }
         this.role = response.data;
       } catch (error) {
         console.error('Falha ao buscar role:', error);

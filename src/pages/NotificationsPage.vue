@@ -7,25 +7,15 @@
             <div class="text-h6 q-ml-sm">Notificações</div>
             <div class="q-gutter-sm">
               <q-btn
+                v-if="hasUnread"
                 flat
                 dense
                 color="primary"
-                label="Marcar todas como lidas"
-                :icon-right="$q.screen.lt.sm ? 'mdi-check-all' : ''"
-                :round="$q.screen.lt.sm"
+                :label="$q.screen.xs ? '' : 'Marcar todas como lidas'"
+                icon-right="mdi-check-all"
+                @click="markAllAsRead"
               >
                 <q-tooltip v-if="$q.screen.lt.sm">Marcar todas como lidas</q-tooltip>
-              </q-btn>
-              <q-btn
-                flat
-                dense
-                color="negative"
-                label="Limpar notificações"
-                :disable="notifications.length === 0"
-                :icon-right="$q.screen.lt.sm ? 'mdi-delete-sweep-outline' : ''"
-                :round="$q.screen.lt.sm"
-              >
-                <q-tooltip v-if="$q.screen.lt.sm">Limpar notificações</q-tooltip>
               </q-btn>
             </div>
           </q-card-section>
@@ -53,7 +43,9 @@
               <q-item-section>
                 <q-item-label>{{ notification.title }}</q-item-label>
                 <q-item-label caption>{{ notification.message }}</q-item-label>
-                <q-item-label caption>{{ formatDate(notification.createdAt) }}</q-item-label>
+                <q-item-label caption class="q-pt-xs">
+                  Recebido em: {{ formatDate(notification.createdAt) }}</q-item-label
+                >
               </q-item-section>
 
               <q-item-section side top>
@@ -74,7 +66,7 @@
 </template>
 
 <script lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { NotificationI } from 'src/models/notification.model';
@@ -83,43 +75,44 @@ import NotificationService from 'src/services/notification.service';
 import { NOTIFICATION_TYPES, NotificationType } from 'src/enums/notification_type.enum';
 import { formatDate } from 'src/utils/utils';
 import { toBase64 } from 'src/utils/transform';
+import socket from 'src/services/socket.service';
+import { useAuthStore } from 'src/stores/authStore';
 
 export default {
   setup() {
     const $q = useQuasar();
+    const authStore = useAuthStore();
     const router = useRouter();
     const { handleApi } = useApi();
 
     const notifications = ref<NotificationI[]>([]);
 
-    // const hasUnread = computed(() => notifications.value.some((n) => !n.read));
+    const hasUnread = computed(() => notifications.value.some((n) => !n.isRead));
 
-    // const markAllAsRead = () => {
-    //   notifications.value.forEach((n) => (n.read = true));
-    //   $q.notify({
-    //     type: 'positive',
-    //     message: 'Todas as notificações foram marcadas como lidas.',
-    //     icon: 'mdi-check-all',
-    //   });
-    // };
-
-    // const confirmClearAll = () => {
-    //   $q.dialog({
-    //     title: 'Confirmar',
-    //     message:
-    //       'Tem certeza que deseja limpar todas as notificações? Esta ação não pode ser desfeita.',
-    //     cancel: { label: 'Cancelar', flat: true },
-    //     ok: { label: 'Limpar', color: 'negative' },
-    //     persistent: true,
-    //   }).onOk(() => {
-    //     notifications.value = [];
-    //     $q.notify({
-    //       type: 'info',
-    //       message: 'Todas as notificações foram limpas.',
-    //       icon: 'mdi-delete-sweep-outline',
-    //     });
-    //   });
-    // };
+    const markAllAsRead = async () => {
+      $q.dialog({
+        title: 'Marcar todas como lidas',
+        message: 'Tem certeza de que deseja marcar todas as notificações como lidas?',
+        cancel: {
+          label: 'Não',
+          color: 'grey',
+          flat: true,
+        },
+        ok: {
+          label: 'Sim',
+          color: 'primary',
+        },
+        persistent: false,
+      }).onOk(async () => {
+        const success = await handleApi(() => NotificationService.readAll(), {
+          successMessage: 'Todas as notificações foram marcadas como lidas!',
+          errorMessage: 'Erro ao marcar notificações como lidas.',
+        });
+        if (success) {
+          notifications.value.forEach((n) => (n.isRead = true));
+        }
+      });
+    };
 
     async function getAll(): Promise<void> {
       const res = await handleApi<NotificationI[]>(() => NotificationService.getAll(), {
@@ -145,8 +138,30 @@ export default {
       router.push(`/p/notificacoes/${id}`);
     };
 
+    const setupSocketListeners = () => {
+      socket.on('newNotification', (notification: NotificationI) => {
+        notifications.value.unshift(notification);
+      });
+    };
+
+    const removeSocketListeners = () => {
+      socket.off('newNotification');
+    };
+
     onMounted(async () => {
       await getAll();
+
+      socket.connect();
+
+      socket.emit('joinUserRoom', authStore.user.id.toString());
+
+      setupSocketListeners();
+    });
+
+    onUnmounted(() => {
+      removeSocketListeners();
+
+      socket.disconnect();
     });
 
     return {
@@ -155,6 +170,8 @@ export default {
       getNotificationIcon,
       formatDate,
       goTo,
+      hasUnread,
+      markAllAsRead,
     };
   },
 };
@@ -166,7 +183,7 @@ export default {
     background-color: rgba(var(--q-primary-rgb), 0.08);
   }
   .body--dark & {
-    background-color: lighten($dark-page, 5%);
+    background-color: rgba(var(--q-primary-rgb), 0.08);
   }
 
   border-left: 4px solid $primary;

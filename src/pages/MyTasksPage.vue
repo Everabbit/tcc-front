@@ -40,7 +40,7 @@ import { TaskStatus, TaskStatusEnum } from 'src/enums/status.enum';
 import { ColumnI } from 'src/models/extra.model';
 import { TaskI } from 'src/models/task.model';
 import emitter from 'src/utils/event_bus';
-import { computed, onBeforeMount, onMounted, ref } from 'vue';
+import { computed, onBeforeMount, onMounted, onUnmounted, ref } from 'vue';
 import CreateTaskDialogComponent from 'src/components/dialogs/CreateTaskDialog.component.vue';
 import KanbanBoardComponent from 'src/components/kanban/KanbanBoard.component.vue';
 import { filterTaskPriorityEnum } from 'src/enums/filter.enum';
@@ -178,7 +178,7 @@ export default {
       setupSocketListeners();
     });
 
-    onBeforeMount(() => {
+    onUnmounted(() => {
       emitter.off('open-task-dialog', openTaskDialog);
 
       removeSocketListeners();
