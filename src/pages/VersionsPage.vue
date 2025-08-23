@@ -1,5 +1,5 @@
 <template>
-  <q-page class="row justify-center items-start q-pa-md" style="min-height: 0px">
+  <q-page class="row justify-center content-start q-pa-md">
     <q-dialog v-model="showDialog" :position="$q.screen.xs ? 'bottom' : 'standard'">
       <CreateVersionDialogComponent
         @close="closeDialog"

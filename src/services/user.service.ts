@@ -452,4 +452,22 @@ export default class UserService {
       return response;
     }
   }
+
+  static async getDashboard(): Promise<ResponseI> {
+    try {
+      const response: AxiosResponse = await api.get(`/users/dashboard`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }

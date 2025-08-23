@@ -128,9 +128,9 @@ export default {
       return StatusValues.find((X) => X.id === status).color;
     }
 
-    function getFixedProgress(progress): string {
+    function getFixedProgress(progress: number): string {
       const prog = progress * 100;
-      if (Number.isInteger(progress)) {
+      if (Number.isInteger(prog)) {
         return prog.toFixed(0);
       }
       return prog.toFixed(2);
@@ -154,7 +154,7 @@ export default {
 .project-card {
   border-radius: 8px;
   border: 1px solid;
-  border-color: $grey-5;
+  border-color: $grey-4;
   transition:
     transform 0.3s,
     box-shadow 0.3s;

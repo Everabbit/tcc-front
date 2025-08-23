@@ -139,10 +139,12 @@ import { ProjectParticipationI } from 'src/models/project.model';
 import ProjectService from 'src/services/project.service';
 import socket from 'src/services/socket.service';
 import { useApi } from 'src/services/useApi';
+import { useAuthStore } from 'src/stores/authStore';
 import { useRolesStore } from 'src/stores/rolesStore';
 import { clone } from 'src/utils/transform';
 import { getUsernameInitials } from 'src/utils/utils';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
 export default {
   components: {
@@ -160,7 +162,9 @@ export default {
   },
   setup(props) {
     const $q = useQuasar();
+    const router = useRouter();
     const { handleApi } = useApi();
+    const authStore = useAuthStore();
     const useRoles = useRolesStore();
     const showDialogMembers = ref<boolean>(false);
     const memberEdit = ref<ProjectParticipationI>(null);
@@ -217,27 +221,50 @@ export default {
     function removeMember(userId: number): void {
       const memberToRemove = members.value.find((m) => m.userId === userId);
       const memberName = memberToRemove?.user?.username || 'este membro';
-      $q.dialog({
-        title: 'Confirmar Remoção',
-        message: `Tem certeza de que deseja remover ${memberName} do projeto?`,
-        cancel: {
-          label: 'Não',
-          color: 'grey',
-          flat: true,
-        },
-        ok: {
-          label: 'Sim',
-          color: 'primary',
-        },
-        persistent: false,
-      }).onOk(async () => {
-        await handleApi(() => ProjectService.removeMember(props.projectId, userId), {
-          errorMessage: 'Ocorreu um erro ao remover o membro.',
-          successMessage: 'Membro removido com sucesso!',
+      if (authStore.user.id === userId) {
+        $q.dialog({
+          title: 'Sair do Projeto',
+          message: 'Tem certeza de que deseja sair do projeto?',
+          cancel: {
+            label: 'Não',
+            color: 'grey',
+            flat: true,
+          },
+          ok: {
+            label: 'Sim',
+            color: 'primary',
+          },
+          persistent: false,
+        }).onOk(async () => {
+          await handleApi(() => ProjectService.removeMember(props.projectId, userId), {
+            errorMessage: 'Ocorreu um erro ao sair do projeto.',
+            successMessage: 'Você saiu do projeto com sucesso!',
+          });
+          router.push('/p/projetos');
         });
+      } else {
+        $q.dialog({
+          title: 'Confirmar Remoção',
+          message: `Tem certeza de que deseja remover ${memberName} do projeto?`,
+          cancel: {
+            label: 'Não',
+            color: 'grey',
+            flat: true,
+          },
+          ok: {
+            label: 'Sim',
+            color: 'primary',
+          },
+          persistent: false,
+        }).onOk(async () => {
+          await handleApi(() => ProjectService.removeMember(props.projectId, userId), {
+            errorMessage: 'Ocorreu um erro ao remover o membro.',
+            successMessage: 'Membro removido com sucesso!',
+          });
 
-        await getAllMembers();
-      });
+          await getAllMembers();
+        });
+      }
     }
 
     const setupSocketListeners = () => {

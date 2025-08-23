@@ -23,35 +23,9 @@
           <q-separator />
 
           <q-list separator v-if="notifications.length > 0">
-            <q-item
-              v-for="notification in notifications"
-              :key="notification.id"
-              clickable
-              v-ripple
-              @click="goTo(notification)"
-              :class="{ 'unread-notification': !notification.isRead }"
-              class="q-py-md"
-            >
-              <q-item-section avatar>
-                <q-avatar
-                  :color="getNotificationColor(notification.type)"
-                  text-color="white"
-                  :icon="getNotificationIcon(notification.type)"
-                />
-              </q-item-section>
-
-              <q-item-section>
-                <q-item-label>{{ notification.title }}</q-item-label>
-                <q-item-label caption>{{ notification.message }}</q-item-label>
-                <q-item-label caption class="q-pt-xs">
-                  Recebido em: {{ formatDate(notification.createdAt) }}</q-item-label
-                >
-              </q-item-section>
-
-              <q-item-section side top>
-                <q-badge v-if="!notification.isRead" color="primary" rounded floating />
-              </q-item-section>
-            </q-item>
+            <div v-for="notification in notifications" :key="notification.id">
+              <NotificationCardComponent :notification="notification" />
+            </div>
           </q-list>
 
           <q-card-section v-else class="text-center text-grey q-py-xl">
@@ -77,8 +51,12 @@ import { formatDate } from 'src/utils/utils';
 import { toBase64 } from 'src/utils/transform';
 import socket from 'src/services/socket.service';
 import { useAuthStore } from 'src/stores/authStore';
+import NotificationCardComponent from 'src/components/cards/NotificationCard.component.vue';
 
 export default {
+  components: {
+    NotificationCardComponent,
+  },
   setup() {
     const $q = useQuasar();
     const authStore = useAuthStore();
@@ -123,21 +101,6 @@ export default {
       }
     }
 
-    const getNotificationColor = (type: NotificationType): string => {
-      const notificationType = NOTIFICATION_TYPES.find((n) => n.id === type);
-      return notificationType ? notificationType.color : 'grey';
-    };
-
-    const getNotificationIcon = (type: NotificationType): string => {
-      const notificationType = NOTIFICATION_TYPES.find((n) => n.id === type);
-      return notificationType ? notificationType.icon : 'mdi-bell';
-    };
-
-    const goTo = (notification: NotificationI) => {
-      const id = toBase64(notification.id.toString());
-      router.push(`/p/notificacoes/${id}`);
-    };
-
     const setupSocketListeners = () => {
       socket.on('newNotification', (notification: NotificationI) => {
         notifications.value.unshift(notification);
@@ -166,10 +129,6 @@ export default {
 
     return {
       notifications,
-      getNotificationColor,
-      getNotificationIcon,
-      formatDate,
-      goTo,
       hasUnread,
       markAllAsRead,
     };

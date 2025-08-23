@@ -70,7 +70,7 @@ export default {
 .kanban-column {
   background-color: $grey-1;
   border: 1px solid;
-  border-color: $grey-5;
+  border-color: $grey-4;
   border-radius: 8px;
   padding: 8px;
   display: flex;

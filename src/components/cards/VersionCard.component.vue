@@ -138,10 +138,17 @@ export default {
 <style lang="scss">
 .version-card {
   border-radius: 8px;
+  border: 1px solid;
+  border-color: $grey-4;
   transition:
     transform 0.3s,
     box-shadow 0.3s;
   cursor: pointer;
+
+  .body--dark & {
+    background-color: $grey-10;
+    border: 0px solid;
+  }
 }
 
 .version-card:hover {
