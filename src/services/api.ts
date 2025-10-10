@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from 'src/stores/authStore';
 
 const api: AxiosInstance = axios.create({
-  baseURL: 'https://tcc-api-e9sf.onrender.com',
+  baseURL: 'https://api-production-cb2f.up.railway.app',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
