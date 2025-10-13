@@ -478,7 +478,7 @@ export default defineComponent({
       const project = projects.value.find((p) => p.id === props.projectId);
       if (project) {
         projectSelectId.value = project.id;
-        await fetchVersions(project.id);
+        fetchVersions(project.id);
       }
     }
 
@@ -495,7 +495,7 @@ export default defineComponent({
       } else {
         versionSelectId.value = null;
       }
-      await fetchTags(projectId);
+      fetchTags(projectId);
     }
 
     async function fetchTask() {
@@ -510,22 +510,23 @@ export default defineComponent({
         editedTask.value.deadline = date.toISOString().split('T')[0];
       }
       if (data.tags && data.tags.length > 0) {
-        await fetchTags(data.version?.project?.id);
-
         selectedTags.value = [];
         data.tags.forEach((e) => {
           selectedTags.value.push(e.tagId);
         });
       }
 
-      await fetchProjects();
       projectSelectId.value = data.version?.project?.id;
       versionSelectId.value = data.version?.id;
-      fetchVersions(projectSelectId.value);
 
-      if (!isMyTasks.value && data.assigneeId) {
-        await fetchUsers();
+      const promises = [fetchProjects(), fetchVersions(projectSelectId.value)];
+
+      if (!isMyTasks.value) {
+        promises.push(fetchUsers());
+        promises.push(fetchTags(projectSelectId.value));
       }
+
+      await Promise.all(promises);
     }
 
     async function fetchUsers() {
@@ -672,15 +673,17 @@ export default defineComponent({
       files.value = attachments;
     };
 
-    onMounted(async () => {
+    onMounted(() => {
+      const promises = [];
       if (isEditing.value) {
-        await fetchTask();
+        promises.push(fetchTask());
+      } else {
+        promises.push(fetchProjects());
+        if (!isMyTasks.value) {
+          promises.push(fetchUsers(), fetchTags());
+        }
       }
-      await fetchProjects();
-      if (!isMyTasks.value) {
-        await fetchUsers();
-        await fetchTags();
-      }
+      Promise.all(promises);
     });
 
     return {

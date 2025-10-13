@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { useAuthStore } from 'src/stores/authStore';
 
 const api: AxiosInstance = axios.create({
+  // baseURL: 'http://localhost:3000',
   baseURL: 'https://api-production-cb2f.up.railway.app',
   timeout: 10000,
   headers: {
