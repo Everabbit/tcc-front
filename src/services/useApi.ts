@@ -1,10 +1,12 @@
-import { ref } from 'vue';
+import { ref, readonly } from 'vue';
 import { useQuasar } from 'quasar';
 import { ResponseI } from 'src/models/response.model';
 
+const activeRequests = ref(0);
+
 export function useApi() {
   const $q = useQuasar();
-  const loading = ref(false);
+  const loading = readonly(activeRequests);
 
   async function handleApi<T>(
     apiCall: () => Promise<ResponseI>,
@@ -15,14 +17,17 @@ export function useApi() {
       hideErrorMessage?: boolean;
     } = {},
   ): Promise<T | null> {
-    loading.value = true;
-    $q.loading.show();
+    if (activeRequests.value === 0) {
+      $q.loading.show();
+    }
+    activeRequests.value++;
+
     try {
       const response = await apiCall();
       if (!response.success) {
         throw new Error(response.message);
       }
-      if (options.successMessage && !options.hideSucessMessage) {
+      if (options.successMessage && !options.hideSucessMessage && response.success) {
         $q.notify({ type: 'positive', message: options.successMessage });
       }
       return response.data as T;
@@ -37,8 +42,10 @@ export function useApi() {
 
       return null;
     } finally {
-      loading.value = false;
-      $q.loading.hide();
+      activeRequests.value--;
+      if (activeRequests.value === 0) {
+        $q.loading.hide();
+      }
     }
   }
 
