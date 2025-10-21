@@ -450,7 +450,7 @@ export default defineComponent({
 
     const getTitle = () => {
       return rolesStore.hasPermission(RolesEnum.DEVELOPER)
-        ? isEditing
+        ? isEditing.value
           ? 'Editar Tarefa'
           : 'Criar Nova Tarefa'
         : 'Detalhes da Tarefa';
