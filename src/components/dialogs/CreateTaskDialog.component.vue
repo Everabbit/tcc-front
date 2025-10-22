@@ -1,12 +1,28 @@
 <template>
   <q-card class="task-dialog-card">
+    <q-dialog v-model="showHistoryDialog">
+      <TaskHistoryDialog :task-id="editedTask.id" />
+    </q-dialog>
+
     <q-form ref="formRef" @submit="onSave">
       <q-card-section class="dialog-header">
         <div class="text-h6">
           <q-icon name="mdi-format-list-bulleted-square" class="q-mr-sm" />
           {{ getTitle() }}
         </div>
-        <q-btn icon="mdi-close" flat round dense v-close-popup />
+        <div>
+          <q-btn
+            v-if="isEditing"
+            icon="mdi-history"
+            flat
+            round
+            dense
+            @click="showHistoryDialog = true"
+          >
+            <q-tooltip>Ver Histórico</q-tooltip>
+          </q-btn>
+          <q-btn icon="mdi-close" flat round dense v-close-popup />
+        </div>
       </q-card-section>
 
       <q-separator />
@@ -364,7 +380,7 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted, computed, defineComponent } from 'vue';
+import { ref, onMounted, computed, defineComponent, Ref } from 'vue';
 import { QForm, useQuasar } from 'quasar';
 import { required } from 'src/utils/validation';
 import { TaskI } from 'src/models/task.model';
@@ -382,6 +398,7 @@ import { useApi } from 'src/services/useApi';
 import VersionService from 'src/services/version.service';
 import TaskAttachmentsComponent from '../lists/TaskAttachments.component.vue';
 import TaskCommentsComponent from '../lists/TaskComments.component.vue';
+import TaskHistoryDialog from './TaskHistoryDialog.component.vue';
 import { useAuthStore } from 'src/stores/authStore';
 import { useRolesStore } from 'src/stores/rolesStore';
 import { RolesEnum } from 'src/enums/roles.enum';
@@ -409,6 +426,7 @@ export default defineComponent({
   components: {
     TaskAttachmentsComponent,
     TaskCommentsComponent,
+    TaskHistoryDialog,
   },
   setup(props, { emit }) {
     const $q = useQuasar();
@@ -422,6 +440,7 @@ export default defineComponent({
     const versions = ref<VersionI[]>([]);
     const projectSelectId = ref<number | null>(null);
     const versionSelectId = ref<number | null>(null);
+    const showHistoryDialog = ref(false);
 
     const authStore = useAuthStore();
     const rolesStore = useRolesStore();
@@ -714,6 +733,7 @@ export default defineComponent({
       rolesStore,
       RolesEnum,
       getTitle,
+      showHistoryDialog,
     };
   },
 });

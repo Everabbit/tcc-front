@@ -186,4 +186,25 @@ export default class TaskService {
       return response;
     }
   }
+  static async getTaskHistory(taskId: number): Promise<ResponseI> {
+    try {
+      if (!taskId) {
+        throw Error('Informe um ID de tarefa válido!');
+      }
+
+      const response: AxiosResponse = await api.get(`/tasks/history/${taskId}`);
+
+      if (response.status === 200) {
+        return response.data;
+      } else {
+        throw Error(response.data.message);
+      }
+    } catch (err: any) {
+      const response: ResponseI = {
+        message: err.response.data.message || err,
+        success: false,
+      };
+      return response;
+    }
+  }
 }
