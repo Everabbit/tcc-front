@@ -258,16 +258,12 @@ export default {
 
     onMounted(async () => {
       emitter.on('open-task-dialog', openTaskDialog);
-      await fetchTasks();
-      await fetchUsers();
+
+      await Promise.all([fetchTasks(), fetchUsers(), fetchProjectAndVersionDetails()]);
 
       socket.connect();
-
       socket.emit('joinProjectRoom', projectId.value);
-
       setupSocketListeners();
-
-      await fetchProjectAndVersionDetails();
     });
 
     onUnmounted(() => {
