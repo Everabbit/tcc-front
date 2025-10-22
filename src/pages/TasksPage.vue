@@ -9,10 +9,22 @@
         @close="saveTask"
       ></CreateTaskDialogComponent>
     </q-dialog>
-    <div class="row items-center justify-between q-mb-md">
-      <!-- Botão de voltar -->
-      <q-btn flat round icon="arrow_back" @click="$router.back()" />
-      <q-space></q-space>
+    <div class="row items-center justify-between q-mb-md q-gutter-md">
+      <div class="col-12 col-md-auto">
+        <q-breadcrumbs>
+          <template v-slot:separator>
+            <q-icon size="1.5em" name="mdi-chevron-right" color="primary" />
+          </template>
+          <q-breadcrumbs-el icon="mdi-arrow-left" @click="$router.back()" class="cursor-pointer">
+            <q-tooltip>Voltar</q-tooltip>
+          </q-breadcrumbs-el>
+          <q-breadcrumbs-el :label="project?.name" icon="mdi-folder-outline" />
+          <q-breadcrumbs-el :label="version?.name" icon="mdi-tag-outline" />
+        </q-breadcrumbs>
+      </div>
+
+      <q-space v-if="!$q.screen.xs" />
+
       <!-- Filtro -->
       <div class="filter-group q-mb-xs">
         <span class="filter-label">Prioridade:</span>
@@ -57,7 +69,7 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted, computed, onBeforeMount, onUnmounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { filterTaskPriorityEnum } from 'src/enums/filter.enum';
 import { ColumnI } from 'src/models/extra.model';
@@ -70,9 +82,11 @@ import emitter from 'src/utils/event_bus';
 import KanbanBoardComponent from 'src/components/kanban/KanbanBoard.component.vue';
 import { TaskI } from 'src/models/task.model';
 import TaskService from 'src/services/task.service';
+import VersionService from 'src/services/version.service';
 import { useApi } from 'src/services/useApi';
-import { ProjectParticipationI } from 'src/models/project.model';
+import { ProjectI, ProjectParticipationI } from 'src/models/project.model';
 import socket from 'src/services/socket.service';
+import { VersionI } from 'src/models/version.model';
 
 export default {
   props: {
@@ -89,6 +103,9 @@ export default {
   setup(props) {
     const $q = useQuasar();
     const { handleApi } = useApi();
+
+    const project = ref<ProjectI | null>(null);
+    const version = ref<VersionI | null>(null);
 
     const priorityFilter = ref<filterTaskPriorityEnum>(filterTaskPriorityEnum.ALL);
     const priorityOptions = ref<{ id: number; value: string }[]>([
@@ -225,6 +242,20 @@ export default {
       socket.off('taskStatusUpdated');
     };
 
+    const fetchProjectAndVersionDetails = async () => {
+      const projectResponse = await handleApi<ProjectI>(
+        () => ProjectService.getOne(projectId.value),
+        { errorMessage: 'Erro ao buscar detalhes do projeto.' },
+      );
+      project.value = projectResponse;
+
+      const versionResponse = await handleApi<VersionI>(
+        () => VersionService.getOne(versionId.value, projectId.value),
+        { errorMessage: 'Erro ao buscar detalhes da versão.' },
+      );
+      version.value = versionResponse;
+    };
+
     onMounted(async () => {
       emitter.on('open-task-dialog', openTaskDialog);
       await fetchTasks();
@@ -235,6 +266,8 @@ export default {
       socket.emit('joinProjectRoom', projectId.value);
 
       setupSocketListeners();
+
+      await fetchProjectAndVersionDetails();
     });
 
     onUnmounted(() => {
@@ -259,6 +292,8 @@ export default {
       versionId,
       saveTask,
       fetchTasks,
+      project,
+      version,
     };
   },
 };
