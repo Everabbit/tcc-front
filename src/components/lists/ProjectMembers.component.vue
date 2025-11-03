@@ -131,7 +131,6 @@
 </template>
 
 <script lang="ts">
-import { mdiConsoleNetworkOutline } from '@quasar/extras/mdi-v4';
 import { useQuasar } from 'quasar';
 import AddMemberDialogCompoent from 'src/components/dialogs/AddMemberDialog.component.vue';
 import { RolesEnum, RolesValues } from 'src/enums/roles.enum';

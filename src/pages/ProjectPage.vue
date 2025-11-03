@@ -173,14 +173,17 @@
         </q-card-section>
       </q-card>
 
-      <!-- Tags -->
-      <ProjectTagsComponent :project-id="idParse" />
-
       <!-- Membros -->
       <ProjectMembersComponent :project-id="idParse" :creator-id="project.creatorId" />
 
       <!-- Versões -->
       <ProjectVersionsComponent :project-id="idParse" />
+
+      <!-- Colunas --> 
+      <ProjectColumnsComponent :project-id="idParse" />
+
+      <!-- Tags -->
+      <ProjectTagsComponent :project-id="idParse" />
     </div>
     <q-page-sticky position="bottom-right" :offset="[18, 18]">
       <q-btn
@@ -245,12 +248,14 @@ import socket from 'src/services/socket.service';
 import ProjectTagsComponent from 'src/components/lists/ProjectTags.component.vue';
 import ProjectMembersComponent from 'src/components/lists/ProjectMembers.component.vue';
 import ProjectVersionsComponent from 'src/components/lists/ProjectVersions.component.vue';
+import ProjectColumnsComponent from 'src/components/lists/ProjectColumns.component.vue';
 
 export default {
   components: {
     ProjectVersionsComponent,
     ProjectMembersComponent,
     ProjectTagsComponent,
+    ProjectColumnsComponent
   },
   props: {
     projectId: {
