@@ -696,8 +696,12 @@ export default defineComponent({
       const promises = [];
       if (isEditing.value) {
         promises.push(fetchTask());
+        if (!isMyTasks.value) {
+          promises.push(fetchUsers(), fetchTags());
+        }
       } else {
         promises.push(fetchProjects());
+        
         if (!isMyTasks.value) {
           promises.push(fetchUsers(), fetchTags());
         }

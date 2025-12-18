@@ -179,9 +179,6 @@
       <!-- Versões -->
       <ProjectVersionsComponent :project-id="idParse" />
 
-      <!-- Colunas --> 
-      <ProjectColumnsComponent :project-id="idParse" />
-
       <!-- Tags -->
       <ProjectTagsComponent :project-id="idParse" />
     </div>
@@ -248,14 +245,12 @@ import socket from 'src/services/socket.service';
 import ProjectTagsComponent from 'src/components/lists/ProjectTags.component.vue';
 import ProjectMembersComponent from 'src/components/lists/ProjectMembers.component.vue';
 import ProjectVersionsComponent from 'src/components/lists/ProjectVersions.component.vue';
-import ProjectColumnsComponent from 'src/components/lists/ProjectColumns.component.vue';
 
 export default {
   components: {
     ProjectVersionsComponent,
     ProjectMembersComponent,
-    ProjectTagsComponent,
-    ProjectColumnsComponent
+    ProjectTagsComponent
   },
   props: {
     projectId: {
